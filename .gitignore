@@ -1,0 +1,33 @@
+## .NET
+bin/
+obj/
+out/
+*.user
+*.suo
+
+## Rider / VS / VSCode
+.vs/
+.vscode/
+.idea/
+*.DotSettings.user
+
+## Test results
+[Tt]est[Rr]esult*/
+coverage*.json
+coverage*.xml
+coverage*.info
+
+## Secrets / env
+.env
+*.pfx
+appsettings.*.local.json
+
+## Uploads (local dev evidence storage)
+uploads/
+
+## Logs
+logs/
+*.log
+
+## OS
+.DS_Store

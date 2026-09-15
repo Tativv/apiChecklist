@@ -1,0 +1,9 @@
+**/bin/
+**/obj/
+**/uploads/
+**/logs/
+.git/
+.vs/
+.vscode/
+.idea/
+*.md

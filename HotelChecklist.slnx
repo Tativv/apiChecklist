@@ -1,0 +1,10 @@
+<Solution>
+  <Folder Name="/src/">
+    <Project Path="src/HotelChecklist.Api/HotelChecklist.Api.csproj" />
+    <Project Path="src/HotelChecklist.Domain/HotelChecklist.Domain.csproj" />
+  </Folder>
+  <Folder Name="/tests/">
+    <Project Path="tests/HotelChecklist.IntegrationTests/HotelChecklist.IntegrationTests.csproj" />
+    <Project Path="tests/HotelChecklist.UnitTests/HotelChecklist.UnitTests.csproj" />
+  </Folder>
+</Solution>

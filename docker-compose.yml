@@ -1,0 +1,43 @@
+services:
+  postgres:
+    image: postgres:16-alpine
+    environment:
+      POSTGRES_DB: hotelchecklist
+      POSTGRES_USER: hotelchecklist
+      POSTGRES_PASSWORD: hotelchecklist_dev
+    ports:
+      - "5432:5432"
+    volumes:
+      - db-data:/var/lib/postgresql/data
+    healthcheck:
+      test: ["CMD-SHELL", "pg_isready -U hotelchecklist -d hotelchecklist"]
+      interval: 5s
+      timeout: 5s
+      retries: 10
+
+  api:
+    build:
+      context: .
+      dockerfile: Dockerfile
+    depends_on:
+      postgres:
+        condition: service_healthy
+    ports:
+      - "8080:8080"
+    environment:
+      ASPNETCORE_ENVIRONMENT: Development
+      ConnectionStrings__Default: "Host=postgres;Port=5432;Database=hotelchecklist;Username=hotelchecklist;Password=hotelchecklist_dev"
+      Jwt__Issuer: HotelChecklist
+      Jwt__Audience: HotelChecklist.Clients
+      Jwt__SigningKey: ${JWT_SIGNING_KEY:-dev-only-signing-key-do-not-use-in-production-1234567890}
+      Jwt__ExpiryMinutes: "120"
+      FileStorage__RootPath: /app/uploads
+      SeedOnStartup: "true"
+    volumes:
+      - uploads-data:/app/uploads
+      - logs-data:/app/logs
+
+volumes:
+  db-data:
+  uploads-data:
+  logs-data:
