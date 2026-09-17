@@ -12,13 +12,12 @@ RUN dotnet publish src/HotelChecklist.Api/HotelChecklist.Api.csproj -c Release -
 FROM mcr.microsoft.com/dotnet/aspnet:10.0 AS runtime
 WORKDIR /app
 
-RUN useradd --uid 1654 --create-home appuser \
-    && mkdir -p /app/uploads /app/logs \
-    && chown -R appuser:appuser /app
+RUN mkdir -p /app/uploads /app/logs \
+    && chown -R app:app /app
 
-COPY --from=build --chown=appuser:appuser /app .
+COPY --from=build --chown=app:app /app .
 
-USER appuser
+USER app
 
 ENV ASPNETCORE_URLS=http://+:8080
 EXPOSE 8080

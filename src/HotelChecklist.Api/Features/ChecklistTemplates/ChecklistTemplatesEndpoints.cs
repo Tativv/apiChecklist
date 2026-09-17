@@ -1,6 +1,6 @@
 using FluentValidation;
 using HotelChecklist.Api.Common.Cqrs;
-using HotelChecklist.Api.Features.ChecklistTemplates.ApplyToAssets;
+using HotelChecklist.Api.Features.ChecklistTemplates.ConfigureAssets;
 using HotelChecklist.Api.Features.ChecklistTemplates.Create;
 using HotelChecklist.Api.Features.ChecklistTemplates.Delete;
 using HotelChecklist.Api.Features.ChecklistTemplates.GetById;
@@ -25,8 +25,8 @@ public static class ChecklistTemplatesEndpoints
 
         services.AddScoped<ICommandHandler<DeleteChecklistTemplateCommand, Unit>, DeleteChecklistTemplateHandler>();
 
-        services.AddScoped<ICommandHandler<ApplyTemplateToAssetsCommand, ApplyTemplateToAssetsResponse>, ApplyTemplateToAssetsHandler>();
-        services.AddScoped<IValidator<ApplyTemplateToAssetsRequest>, ApplyTemplateToAssetsRequestValidator>();
+        services.AddScoped<ICommandHandler<ConfigureTemplateAssetsCommand, ConfigureTemplateAssetsResponse>, ConfigureTemplateAssetsHandler>();
+        services.AddScoped<IValidator<ConfigureTemplateAssetsRequest>, ConfigureTemplateAssetsRequestValidator>();
 
         return services;
     }
@@ -40,6 +40,6 @@ public static class ChecklistTemplatesEndpoints
         group.MapListChecklistTemplates();
         group.MapUpdateChecklistTemplate();
         group.MapDeleteChecklistTemplate();
-        group.MapApplyTemplateToAssets();
+        group.MapConfigureTemplateAssets();
     }
 }

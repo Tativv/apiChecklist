@@ -6,11 +6,12 @@ using HotelChecklist.Api.Features.Areas.Create;
 using HotelChecklist.Api.Features.Assets.Create;
 using HotelChecklist.Api.Features.Auth.Login;
 using HotelChecklist.Api.Features.ChecklistInstances.Approve;
+using HotelChecklist.Api.Features.ChecklistInstances.Create;
 using HotelChecklist.Api.Features.ChecklistInstances.Finish;
 using HotelChecklist.Api.Features.ChecklistInstances.GetById;
 using HotelChecklist.Api.Features.ChecklistInstances.Start;
 using HotelChecklist.Api.Features.ChecklistTemplates;
-using HotelChecklist.Api.Features.ChecklistTemplates.ApplyToAssets;
+using HotelChecklist.Api.Features.ChecklistTemplates.ConfigureAssets;
 using HotelChecklist.Api.Features.ChecklistTemplates.Create;
 using HotelChecklist.IntegrationTests.Infrastructure;
 
@@ -57,17 +58,29 @@ public class ChecklistLifecycleTests : IClassFixture<CustomWebApplicationFactory
             area.Id,
             "Daily",
             30,
-            [new ChecklistTaskRequest("Tender cama", 1), new ChecklistTaskRequest("Limpiar baño", 2)]));
+            "08:00",
+            null,
+            null,
+            null,
+            null,
+            null,
+            [new ChecklistTaskRequest("Tender cama", null, 1), new ChecklistTaskRequest("Limpiar baño", null, 2)]));
         templateResponse.StatusCode.Should().Be(HttpStatusCode.Created);
         var template = await templateResponse.Content.ReadFromJsonAsync<CreateChecklistTemplateResponse>();
 
-        var applyResponse = await _client.PostAsJsonAsync(
-            $"/api/checklist-templates/{template!.Id}/apply-to-assets",
-            new ApplyTemplateToAssetsRequest([asset!.Id], DateOnly.FromDateTime(DateTime.UtcNow), null));
-        applyResponse.StatusCode.Should().Be(HttpStatusCode.Created);
-        var applyResult = await applyResponse.Content.ReadFromJsonAsync<ApplyTemplateToAssetsResponse>();
-        applyResult!.Created.Should().Be(1);
-        var instanceId = applyResult.CreatedInstanceIds.Single();
+        var configureAssetsResponse = await _client.PutAsJsonAsync(
+            $"/api/checklist-templates/{template!.Id}/assets",
+            new ConfigureTemplateAssetsRequest([asset!.Id]));
+        configureAssetsResponse.StatusCode.Should().Be(HttpStatusCode.OK);
+        var configureAssetsResult = await configureAssetsResponse.Content.ReadFromJsonAsync<ConfigureTemplateAssetsResponse>();
+        configureAssetsResult!.AssetCount.Should().Be(1);
+
+        var createInstanceResponse = await _client.PostAsJsonAsync(
+            "/api/checklist-instances",
+            new CreateChecklistInstanceRequest(template.Id, asset.Id, DateOnly.FromDateTime(DateTime.UtcNow), null));
+        createInstanceResponse.StatusCode.Should().Be(HttpStatusCode.Created);
+        var createdInstance = await createInstanceResponse.Content.ReadFromJsonAsync<CreateChecklistInstanceResponse>();
+        var instanceId = createdInstance!.Id;
 
         var startResponse = await _client.PostAsync($"/api/checklist-instances/{instanceId}/start", null);
         startResponse.StatusCode.Should().Be(HttpStatusCode.OK);

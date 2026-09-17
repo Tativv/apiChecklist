@@ -17,6 +17,18 @@ public sealed class ChecklistTemplate : IAuditable
 
     public int EstimatedDurationMinutes { get; set; }
 
+    public TimeOnly ScheduledTime { get; set; }
+
+    public DateOnly RecurrenceStartDate { get; set; }
+
+    public CustomRecurrenceMode? CustomRecurrenceMode { get; set; }
+
+    public int? RecurrenceIntervalValue { get; set; }
+
+    public RecurrenceIntervalUnit? RecurrenceIntervalUnit { get; set; }
+
+    public int? RecurrenceDaysOfWeekMask { get; set; }
+
     public DateTimeOffset CreatedAtUtc { get; set; }
 
     public DateTimeOffset UpdatedAtUtc { get; set; }
@@ -26,4 +38,6 @@ public sealed class ChecklistTemplate : IAuditable
     public ICollection<ChecklistTask> Tasks { get; set; } = [];
 
     public ICollection<ChecklistInstance> Instances { get; set; } = [];
+
+    public ICollection<TemplateAsset> TemplateAssets { get; set; } = [];
 }

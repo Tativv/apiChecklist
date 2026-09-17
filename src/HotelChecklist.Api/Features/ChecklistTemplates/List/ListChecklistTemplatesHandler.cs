@@ -14,11 +14,32 @@ public sealed class ListChecklistTemplatesHandler(AppDbContext db) : IQueryHandl
         if (query.AreaId is not null)
             templatesQuery = templatesQuery.Where(t => t.AreaId == query.AreaId);
 
-        var templates = await templatesQuery
+        var rows = await templatesQuery
             .OrderBy(t => t.Name)
-            .Select(t => new ListChecklistTemplatesResponseItem(
-                t.Id, t.Name, t.AreaId, t.RecurrenceType.ToString(), t.EstimatedDurationMinutes, t.Tasks.Count))
+            .Select(t => new
+            {
+                t.Id,
+                t.Name,
+                t.AreaId,
+                t.RecurrenceType,
+                t.EstimatedDurationMinutes,
+                t.ScheduledTime,
+                TaskCount = t.Tasks.Count,
+                AssetCount = t.TemplateAssets.Count
+            })
             .ToListAsync(cancellationToken);
+
+        var templates = rows
+            .Select(t => new ListChecklistTemplatesResponseItem(
+                t.Id,
+                t.Name,
+                t.AreaId,
+                t.RecurrenceType.ToString(),
+                t.EstimatedDurationMinutes,
+                ChecklistTemplateSchedulingMapping.FormatScheduledTime(t.ScheduledTime),
+                t.TaskCount,
+                t.AssetCount))
+            .ToList();
 
         return Result.Success<IReadOnlyList<ListChecklistTemplatesResponseItem>>(templates);
     }

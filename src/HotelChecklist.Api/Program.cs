@@ -29,6 +29,22 @@ builder.Host.UseSerilog((context, services, configuration) => configuration
 
 builder.Services.Configure<JsonOptions>(o => o.SerializerOptions.PropertyNamingPolicy = System.Text.Json.JsonNamingPolicy.CamelCase);
 
+const string FrontendCorsPolicy = "Frontend";
+var allowedOrigins = builder.Configuration.GetSection("Cors:AllowedOrigins").Get<string[]>()
+    ?? ["http://localhost:3000"];
+
+builder.Services.AddCors(options =>
+{
+    options.AddPolicy(FrontendCorsPolicy, policy =>
+    {
+        policy.AllowAnyHeader().AllowAnyMethod();
+        if (allowedOrigins.Contains("*"))
+            policy.SetIsOriginAllowed(_ => true);
+        else
+            policy.WithOrigins(allowedOrigins);
+    });
+});
+
 builder.Services.AddDbContext<AppDbContext>(options => options
     .UseNpgsql(builder.Configuration.GetConnectionString("Default"))
     .UseSnakeCaseNamingConvention());
@@ -97,6 +113,8 @@ var app = builder.Build();
 app.UseExceptionHandler();
 
 app.UseSerilogRequestLogging();
+
+app.UseCors(FrontendCorsPolicy);
 
 if (app.Environment.IsDevelopment())
 {

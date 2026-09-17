@@ -4,7 +4,7 @@ using HotelChecklist.Api.Features.ChecklistInstances.Approve;
 using HotelChecklist.Api.Features.ChecklistInstances.CompleteTask;
 using HotelChecklist.Api.Features.ChecklistInstances.Create;
 using HotelChecklist.Api.Features.ChecklistInstances.Finish;
-using HotelChecklist.Api.Features.ChecklistInstances.GenerateDaily;
+using HotelChecklist.Api.Features.ChecklistInstances.GenerateScheduled;
 using HotelChecklist.Api.Features.ChecklistInstances.GetById;
 using HotelChecklist.Api.Features.ChecklistInstances.GetEvidenceFile;
 using HotelChecklist.Api.Features.ChecklistInstances.List;
@@ -23,7 +23,7 @@ public static class ChecklistInstancesEndpoints
         services.AddScoped<ICommandHandler<CreateChecklistInstanceCommand, CreateChecklistInstanceResponse>, CreateChecklistInstanceHandler>();
         services.AddScoped<IValidator<CreateChecklistInstanceRequest>, CreateChecklistInstanceRequestValidator>();
 
-        services.AddScoped<ICommandHandler<GenerateDailyChecklistsCommand, GenerateDailyChecklistsResponse>, GenerateDailyChecklistsHandler>();
+        services.AddScoped<ICommandHandler<GenerateScheduledChecklistsCommand, GenerateScheduledChecklistsResponse>, GenerateScheduledChecklistsHandler>();
 
         services.AddScoped<IQueryHandler<GetChecklistInstanceByIdQuery, GetChecklistInstanceByIdResponse>, GetChecklistInstanceByIdHandler>();
 
@@ -53,7 +53,7 @@ public static class ChecklistInstancesEndpoints
         var group = app.MapGroup("/api/checklist-instances").WithTags("ChecklistInstances");
 
         group.MapCreateChecklistInstance();
-        group.MapGenerateDailyChecklists();
+        group.MapGenerateScheduledChecklists();
         group.MapGetChecklistInstanceById();
         group.MapListChecklistInstances();
         group.MapStartChecklistInstance();

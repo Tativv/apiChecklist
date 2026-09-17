@@ -14,6 +14,8 @@ public sealed class AppDbContext(DbContextOptions<AppDbContext> options) : DbCon
 
     public DbSet<ChecklistTask> ChecklistTasks => Set<ChecklistTask>();
 
+    public DbSet<TemplateAsset> TemplateAssets => Set<TemplateAsset>();
+
     public DbSet<ChecklistInstance> ChecklistInstances => Set<ChecklistInstance>();
 
     public DbSet<ChecklistTaskExecution> ChecklistTaskExecutions => Set<ChecklistTaskExecution>();

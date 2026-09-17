@@ -11,6 +11,7 @@ public sealed class GetChecklistTemplateByIdHandler(AppDbContext db) : IQueryHan
     {
         var template = await db.ChecklistTemplates
             .Include(t => t.Tasks)
+            .Include(t => t.TemplateAssets)
             .FirstOrDefaultAsync(t => t.Id == query.Id, cancellationToken);
 
         if (template is null)

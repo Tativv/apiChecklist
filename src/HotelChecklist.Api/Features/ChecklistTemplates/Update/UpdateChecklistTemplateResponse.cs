@@ -7,4 +7,10 @@ public sealed record UpdateChecklistTemplateResponse(
     Guid AreaId,
     string RecurrenceType,
     int EstimatedDurationMinutes,
+    string ScheduledTime,
+    DateOnly RecurrenceStartDate,
+    string? CustomRecurrenceMode,
+    int? RecurrenceIntervalValue,
+    string? RecurrenceIntervalUnit,
+    List<string> RecurrenceDaysOfWeek,
     List<ChecklistTaskResponseItem> Tasks);

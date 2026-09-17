@@ -9,4 +9,10 @@ public sealed record UpdateChecklistTemplateCommand(
     Guid AreaId,
     string RecurrenceType,
     int EstimatedDurationMinutes,
+    string ScheduledTime,
+    DateOnly? RecurrenceStartDate,
+    string? CustomRecurrenceMode,
+    int? RecurrenceIntervalValue,
+    string? RecurrenceIntervalUnit,
+    List<string>? RecurrenceDaysOfWeek,
     List<ChecklistTaskRequest> Tasks) : ICommand<UpdateChecklistTemplateResponse>;

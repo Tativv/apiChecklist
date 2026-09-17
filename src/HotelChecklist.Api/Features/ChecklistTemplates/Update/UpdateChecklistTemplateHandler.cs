@@ -36,9 +36,18 @@ public sealed class UpdateChecklistTemplateHandler(AppDbContext db) : ICommandHa
         template.RecurrenceType = Enum.Parse<ChecklistRecurrenceType>(command.RecurrenceType, ignoreCase: true);
         template.EstimatedDurationMinutes = command.EstimatedDurationMinutes;
 
+        ChecklistTemplateSchedulingMapping.ApplyScheduling(
+            template,
+            command.ScheduledTime,
+            command.RecurrenceStartDate,
+            command.CustomRecurrenceMode,
+            command.RecurrenceIntervalValue,
+            command.RecurrenceIntervalUnit,
+            command.RecurrenceDaysOfWeek);
+
         template.Tasks.Clear();
         foreach (var task in command.Tasks)
-            template.Tasks.Add(new ChecklistTask { Id = Guid.NewGuid(), Name = task.Name, Order = task.Order });
+            template.Tasks.Add(new ChecklistTask { Id = Guid.NewGuid(), Name = task.Name, Description = task.Description, Order = task.Order });
 
         await db.SaveChangesAsync(cancellationToken);
 

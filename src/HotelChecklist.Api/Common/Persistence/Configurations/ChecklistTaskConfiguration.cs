@@ -14,6 +14,9 @@ public sealed class ChecklistTaskConfiguration : IEntityTypeConfiguration<Checkl
             .IsRequired()
             .HasMaxLength(200);
 
+        builder.Property(t => t.Description)
+            .HasMaxLength(1000);
+
         builder.HasIndex(t => new { t.TemplateId, t.Order });
 
         builder.HasMany(t => t.Executions)

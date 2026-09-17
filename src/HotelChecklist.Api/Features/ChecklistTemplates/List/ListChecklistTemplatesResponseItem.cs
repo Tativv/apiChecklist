@@ -6,4 +6,6 @@ public sealed record ListChecklistTemplatesResponseItem(
     Guid AreaId,
     string RecurrenceType,
     int EstimatedDurationMinutes,
-    int TaskCount);
+    string ScheduledTime,
+    int TaskCount,
+    int AssetCount);

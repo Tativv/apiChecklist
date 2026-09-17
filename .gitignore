@@ -2,6 +2,7 @@
 bin/
 obj/
 out/
+publish/
 *.user
 *.suo
 
@@ -21,6 +22,7 @@ coverage*.info
 .env
 *.pfx
 appsettings.*.local.json
+appsettings.Production.json
 
 ## Uploads (local dev evidence storage)
 uploads/

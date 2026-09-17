@@ -80,9 +80,11 @@ public static class DbSeeder
             AreaId = roomsArea.Id,
             RecurrenceType = ChecklistRecurrenceType.Daily,
             EstimatedDurationMinutes = 30,
+            ScheduledTime = new TimeOnly(8, 0),
+            RecurrenceStartDate = DateOnly.FromDateTime(DateTime.UtcNow),
             Tasks =
             [
-                new ChecklistTask { Id = Guid.NewGuid(), Name = "Tender cama", Order = 1 },
+                new ChecklistTask { Id = Guid.NewGuid(), Name = "Tender cama", Description = "Cambiar sábanas y acomodar almohadas.", Order = 1 },
                 new ChecklistTask { Id = Guid.NewGuid(), Name = "Limpiar baño", Order = 2 },
                 new ChecklistTask { Id = Guid.NewGuid(), Name = "Reponer amenities", Order = 3 },
                 new ChecklistTask { Id = Guid.NewGuid(), Name = "Revisar minibar", Order = 4 },
@@ -90,6 +92,13 @@ public static class DbSeeder
             ]
         };
         db.ChecklistTemplates.Add(sampleTemplate);
+        db.TemplateAssets.Add(new TemplateAsset
+        {
+            Id = Guid.NewGuid(),
+            TemplateId = sampleTemplate.Id,
+            AssetId = sampleAsset.Id,
+            CreatedAtUtc = DateTimeOffset.UtcNow
+        });
 
         await db.SaveChangesAsync(cancellationToken);
     }

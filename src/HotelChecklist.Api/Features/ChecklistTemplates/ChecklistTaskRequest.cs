@@ -1,3 +1,3 @@
 namespace HotelChecklist.Api.Features.ChecklistTemplates;
 
-public sealed record ChecklistTaskRequest(string Name, int Order);
+public sealed record ChecklistTaskRequest(string Name, string? Description, int Order);
