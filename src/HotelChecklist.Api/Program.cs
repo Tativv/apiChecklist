@@ -56,11 +56,14 @@ builder.Services.AddScoped<IJwtTokenGenerator, JwtTokenGenerator>();
 builder.Services.AddSingleton<IPasswordHasher, PasswordHasher>();
 builder.Services.AddSingleton<IFileStorage, LocalFileStorage>();
 
-var jwtOptions = builder.Configuration.GetSection(JwtOptions.SectionName).Get<JwtOptions>() ?? new JwtOptions();
-
 builder.Services.AddAuthentication(JwtBearerDefaults.AuthenticationScheme)
     .AddJwtBearer(options =>
     {
+        // Read lazily (not into a variable captured at startup) so this reflects the final
+        // merged configuration - e.g. WebApplicationFactory's test overrides, which are added
+        // to builder.Configuration after this delegate is registered but before it first runs.
+        var jwtOptions = builder.Configuration.GetSection(JwtOptions.SectionName).Get<JwtOptions>() ?? new JwtOptions();
+
         options.TokenValidationParameters = new TokenValidationParameters
         {
             ValidateIssuer = true,
