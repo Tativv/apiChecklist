@@ -52,19 +52,17 @@ public class ChecklistLifecycleTests : IClassFixture<CustomWebApplicationFactory
         assetResponse.StatusCode.Should().Be(HttpStatusCode.Created);
         var asset = await assetResponse.Content.ReadFromJsonAsync<CreateAssetResponse>();
 
+        var dailySchedule = new ScheduleInput("Daily", 1, null, null, "08:00", 1);
         var templateResponse = await _client.PostAsJsonAsync("/api/checklist-templates", new CreateChecklistTemplateRequest(
             "Checklist diario",
             "Revisión diaria",
             area.Id,
-            "Daily",
             30,
-            "08:00",
-            null,
-            null,
-            null,
-            null,
-            null,
-            [new ChecklistTaskRequest("Tender cama", null, 1), new ChecklistTaskRequest("Limpiar baño", null, 2)]));
+            [dailySchedule],
+            [
+                new ChecklistTaskRequest("Tender cama", null, 1, "Scheduled", [dailySchedule]),
+                new ChecklistTaskRequest("Limpiar baño", null, 2, "Scheduled", [dailySchedule])
+            ]));
         templateResponse.StatusCode.Should().Be(HttpStatusCode.Created);
         var template = await templateResponse.Content.ReadFromJsonAsync<CreateChecklistTemplateResponse>();
 

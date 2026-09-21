@@ -16,6 +16,8 @@ public sealed class ChecklistInstanceConfiguration : IEntityTypeConfiguration<Ch
 
         builder.HasIndex(i => new { i.AssetId, i.Date });
 
+        builder.HasIndex(i => new { i.TemplateId, i.AssetId, i.Date }).IsUnique();
+
         builder.HasIndex(i => i.Status);
 
         builder.HasOne(i => i.Asset)

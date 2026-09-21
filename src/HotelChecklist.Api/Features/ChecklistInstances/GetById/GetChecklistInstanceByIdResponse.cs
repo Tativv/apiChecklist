@@ -21,7 +21,9 @@ public sealed record TaskExecutionResponseItem(
     Guid TaskId,
     string TaskName,
     int Order,
-    bool Completed,
-    DateTimeOffset? CompletedAt,
+    string Status,
+    DateTimeOffset? ScheduledForUtc,
+    DateTimeOffset? ExecutedAtUtc,
     string? Comment,
+    Guid? CompletedByUserId,
     int EvidenceCount);

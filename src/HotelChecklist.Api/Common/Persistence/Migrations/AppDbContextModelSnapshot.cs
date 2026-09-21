@@ -166,11 +166,12 @@ namespace HotelChecklist.Api.Common.Persistence.Migrations
                     b.HasIndex("Status")
                         .HasDatabaseName("ix_checklist_instances_status");
 
-                    b.HasIndex("TemplateId")
-                        .HasDatabaseName("ix_checklist_instances_template_id");
-
                     b.HasIndex("AssetId", "Date")
                         .HasDatabaseName("ix_checklist_instances_asset_id_date");
+
+                    b.HasIndex("TemplateId", "AssetId", "Date")
+                        .IsUnique()
+                        .HasDatabaseName("ix_checklist_instances_template_id_asset_id_date");
 
                     b.ToTable("checklist_instances", (string)null);
                 });
@@ -186,6 +187,12 @@ namespace HotelChecklist.Api.Common.Persistence.Migrations
                         .HasMaxLength(1000)
                         .HasColumnType("character varying(1000)")
                         .HasColumnName("description");
+
+                    b.Property<string>("ExecutionMode")
+                        .IsRequired()
+                        .HasMaxLength(20)
+                        .HasColumnType("character varying(20)")
+                        .HasColumnName("execution_mode");
 
                     b.Property<string>("Name")
                         .IsRequired()
@@ -279,13 +286,27 @@ namespace HotelChecklist.Api.Common.Persistence.Migrations
                         .HasColumnType("character varying(1000)")
                         .HasColumnName("comment");
 
-                    b.Property<bool>("Completed")
-                        .HasColumnType("boolean")
-                        .HasColumnName("completed");
+                    b.Property<Guid?>("CompletedByUserId")
+                        .HasColumnType("uuid")
+                        .HasColumnName("completed_by_user_id");
 
-                    b.Property<DateTimeOffset?>("CompletedAt")
+                    b.Property<DateTimeOffset?>("ExecutedAtUtc")
                         .HasColumnType("timestamp with time zone")
-                        .HasColumnName("completed_at");
+                        .HasColumnName("executed_at_utc");
+
+                    b.Property<Guid?>("ScheduleId")
+                        .HasColumnType("uuid")
+                        .HasColumnName("schedule_id");
+
+                    b.Property<DateTimeOffset?>("ScheduledForUtc")
+                        .HasColumnType("timestamp with time zone")
+                        .HasColumnName("scheduled_for_utc");
+
+                    b.Property<string>("Status")
+                        .IsRequired()
+                        .HasMaxLength(20)
+                        .HasColumnType("character varying(20)")
+                        .HasColumnName("status");
 
                     b.Property<Guid>("TaskId")
                         .HasColumnType("uuid")
@@ -297,8 +318,17 @@ namespace HotelChecklist.Api.Common.Persistence.Migrations
                     b.HasIndex("ChecklistInstanceId")
                         .HasDatabaseName("ix_checklist_task_executions_checklist_instance_id");
 
+                    b.HasIndex("CompletedByUserId")
+                        .HasDatabaseName("ix_checklist_task_executions_completed_by_user_id");
+
+                    b.HasIndex("ScheduleId")
+                        .HasDatabaseName("ix_checklist_task_executions_schedule_id");
+
                     b.HasIndex("TaskId")
                         .HasDatabaseName("ix_checklist_task_executions_task_id");
+
+                    b.HasIndex("ChecklistInstanceId", "TaskId")
+                        .HasDatabaseName("ix_checklist_task_executions_checklist_instance_id_task_id");
 
                     b.ToTable("checklist_task_executions", (string)null);
                 });
@@ -318,10 +348,6 @@ namespace HotelChecklist.Api.Common.Persistence.Migrations
                         .HasColumnType("timestamp with time zone")
                         .HasColumnName("created_at_utc");
 
-                    b.Property<int?>("CustomRecurrenceMode")
-                        .HasColumnType("integer")
-                        .HasColumnName("custom_recurrence_mode");
-
                     b.Property<string>("Description")
                         .HasMaxLength(1000)
                         .HasColumnType("character varying(1000)")
@@ -337,30 +363,6 @@ namespace HotelChecklist.Api.Common.Persistence.Migrations
                         .HasColumnType("character varying(200)")
                         .HasColumnName("name");
 
-                    b.Property<int?>("RecurrenceDaysOfWeekMask")
-                        .HasColumnType("integer")
-                        .HasColumnName("recurrence_days_of_week_mask");
-
-                    b.Property<int?>("RecurrenceIntervalUnit")
-                        .HasColumnType("integer")
-                        .HasColumnName("recurrence_interval_unit");
-
-                    b.Property<int?>("RecurrenceIntervalValue")
-                        .HasColumnType("integer")
-                        .HasColumnName("recurrence_interval_value");
-
-                    b.Property<DateOnly>("RecurrenceStartDate")
-                        .HasColumnType("date")
-                        .HasColumnName("recurrence_start_date");
-
-                    b.Property<int>("RecurrenceType")
-                        .HasColumnType("integer")
-                        .HasColumnName("recurrence_type");
-
-                    b.Property<TimeOnly>("ScheduledTime")
-                        .HasColumnType("time without time zone")
-                        .HasColumnName("scheduled_time");
-
                     b.Property<DateTimeOffset>("UpdatedAtUtc")
                         .HasColumnType("timestamp with time zone")
                         .HasColumnName("updated_at_utc");
@@ -372,6 +374,84 @@ namespace HotelChecklist.Api.Common.Persistence.Migrations
                         .HasDatabaseName("ix_checklist_templates_area_id");
 
                     b.ToTable("checklist_templates", (string)null);
+                });
+
+            modelBuilder.Entity("HotelChecklist.Domain.Entities.Schedule", b =>
+                {
+                    b.Property<Guid>("Id")
+                        .ValueGeneratedOnAdd()
+                        .HasColumnType("uuid")
+                        .HasColumnName("id");
+
+                    b.Property<bool>("Active")
+                        .HasColumnType("boolean")
+                        .HasColumnName("active");
+
+                    b.Property<DateTimeOffset>("CreatedAtUtc")
+                        .HasColumnType("timestamp with time zone")
+                        .HasColumnName("created_at_utc");
+
+                    b.Property<int?>("DayOfMonth")
+                        .HasColumnType("integer")
+                        .HasColumnName("day_of_month");
+
+                    b.Property<int>("ExecutionOrder")
+                        .HasColumnType("integer")
+                        .HasColumnName("execution_order");
+
+                    b.Property<string>("FrequencyType")
+                        .IsRequired()
+                        .HasMaxLength(20)
+                        .HasColumnType("character varying(20)")
+                        .HasColumnName("frequency_type");
+
+                    b.Property<int>("IntervalValue")
+                        .HasColumnType("integer")
+                        .HasColumnName("interval_value");
+
+                    b.Property<TimeOnly>("TimeOfDay")
+                        .HasColumnType("time without time zone")
+                        .HasColumnName("time_of_day");
+
+                    b.Property<string>("WeekDay")
+                        .HasMaxLength(20)
+                        .HasColumnType("character varying(20)")
+                        .HasColumnName("week_day");
+
+                    b.HasKey("Id")
+                        .HasName("pk_schedules");
+
+                    b.HasIndex("FrequencyType", "Active")
+                        .HasDatabaseName("ix_schedules_frequency_type_active");
+
+                    b.ToTable("schedules", (string)null);
+                });
+
+            modelBuilder.Entity("HotelChecklist.Domain.Entities.TaskSchedule", b =>
+                {
+                    b.Property<Guid>("Id")
+                        .ValueGeneratedOnAdd()
+                        .HasColumnType("uuid")
+                        .HasColumnName("id");
+
+                    b.Property<Guid>("ScheduleId")
+                        .HasColumnType("uuid")
+                        .HasColumnName("schedule_id");
+
+                    b.Property<Guid>("TaskId")
+                        .HasColumnType("uuid")
+                        .HasColumnName("task_id");
+
+                    b.HasKey("Id")
+                        .HasName("pk_task_schedules");
+
+                    b.HasIndex("ScheduleId")
+                        .HasDatabaseName("ix_task_schedules_schedule_id");
+
+                    b.HasIndex("TaskId")
+                        .HasDatabaseName("ix_task_schedules_task_id");
+
+                    b.ToTable("task_schedules", (string)null);
                 });
 
             modelBuilder.Entity("HotelChecklist.Domain.Entities.TemplateAsset", b =>
@@ -404,6 +484,33 @@ namespace HotelChecklist.Api.Common.Persistence.Migrations
                         .HasDatabaseName("ix_template_assets_template_id_asset_id");
 
                     b.ToTable("template_assets", (string)null);
+                });
+
+            modelBuilder.Entity("HotelChecklist.Domain.Entities.TemplateSchedule", b =>
+                {
+                    b.Property<Guid>("Id")
+                        .ValueGeneratedOnAdd()
+                        .HasColumnType("uuid")
+                        .HasColumnName("id");
+
+                    b.Property<Guid>("ScheduleId")
+                        .HasColumnType("uuid")
+                        .HasColumnName("schedule_id");
+
+                    b.Property<Guid>("TemplateId")
+                        .HasColumnType("uuid")
+                        .HasColumnName("template_id");
+
+                    b.HasKey("Id")
+                        .HasName("pk_template_schedules");
+
+                    b.HasIndex("ScheduleId")
+                        .HasDatabaseName("ix_template_schedules_schedule_id");
+
+                    b.HasIndex("TemplateId")
+                        .HasDatabaseName("ix_template_schedules_template_id");
+
+                    b.ToTable("template_schedules", (string)null);
                 });
 
             modelBuilder.Entity("HotelChecklist.Domain.Entities.User", b =>
@@ -549,6 +656,18 @@ namespace HotelChecklist.Api.Common.Persistence.Migrations
                         .IsRequired()
                         .HasConstraintName("fk_checklist_task_executions_checklist_instances_checklist_ins");
 
+                    b.HasOne("HotelChecklist.Domain.Entities.User", "CompletedByUser")
+                        .WithMany()
+                        .HasForeignKey("CompletedByUserId")
+                        .OnDelete(DeleteBehavior.Restrict)
+                        .HasConstraintName("fk_checklist_task_executions_users_completed_by_user_id");
+
+                    b.HasOne("HotelChecklist.Domain.Entities.Schedule", "Schedule")
+                        .WithMany()
+                        .HasForeignKey("ScheduleId")
+                        .OnDelete(DeleteBehavior.SetNull)
+                        .HasConstraintName("fk_checklist_task_executions_schedules_schedule_id");
+
                     b.HasOne("HotelChecklist.Domain.Entities.ChecklistTask", "Task")
                         .WithMany("Executions")
                         .HasForeignKey("TaskId")
@@ -557,6 +676,10 @@ namespace HotelChecklist.Api.Common.Persistence.Migrations
                         .HasConstraintName("fk_checklist_task_executions_checklist_tasks_task_id");
 
                     b.Navigation("ChecklistInstance");
+
+                    b.Navigation("CompletedByUser");
+
+                    b.Navigation("Schedule");
 
                     b.Navigation("Task");
                 });
@@ -571,6 +694,27 @@ namespace HotelChecklist.Api.Common.Persistence.Migrations
                         .HasConstraintName("fk_checklist_templates_areas_area_id");
 
                     b.Navigation("Area");
+                });
+
+            modelBuilder.Entity("HotelChecklist.Domain.Entities.TaskSchedule", b =>
+                {
+                    b.HasOne("HotelChecklist.Domain.Entities.Schedule", "Schedule")
+                        .WithMany()
+                        .HasForeignKey("ScheduleId")
+                        .OnDelete(DeleteBehavior.Cascade)
+                        .IsRequired()
+                        .HasConstraintName("fk_task_schedules_schedules_schedule_id");
+
+                    b.HasOne("HotelChecklist.Domain.Entities.ChecklistTask", "Task")
+                        .WithMany("TaskSchedules")
+                        .HasForeignKey("TaskId")
+                        .OnDelete(DeleteBehavior.Cascade)
+                        .IsRequired()
+                        .HasConstraintName("fk_task_schedules_checklist_tasks_task_id");
+
+                    b.Navigation("Schedule");
+
+                    b.Navigation("Task");
                 });
 
             modelBuilder.Entity("HotelChecklist.Domain.Entities.TemplateAsset", b =>
@@ -590,6 +734,27 @@ namespace HotelChecklist.Api.Common.Persistence.Migrations
                         .HasConstraintName("fk_template_assets_checklist_templates_template_id");
 
                     b.Navigation("Asset");
+
+                    b.Navigation("Template");
+                });
+
+            modelBuilder.Entity("HotelChecklist.Domain.Entities.TemplateSchedule", b =>
+                {
+                    b.HasOne("HotelChecklist.Domain.Entities.Schedule", "Schedule")
+                        .WithMany()
+                        .HasForeignKey("ScheduleId")
+                        .OnDelete(DeleteBehavior.Cascade)
+                        .IsRequired()
+                        .HasConstraintName("fk_template_schedules_schedules_schedule_id");
+
+                    b.HasOne("HotelChecklist.Domain.Entities.ChecklistTemplate", "Template")
+                        .WithMany("TemplateSchedules")
+                        .HasForeignKey("TemplateId")
+                        .OnDelete(DeleteBehavior.Cascade)
+                        .IsRequired()
+                        .HasConstraintName("fk_template_schedules_checklist_templates_template_id");
+
+                    b.Navigation("Schedule");
 
                     b.Navigation("Template");
                 });
@@ -614,6 +779,8 @@ namespace HotelChecklist.Api.Common.Persistence.Migrations
             modelBuilder.Entity("HotelChecklist.Domain.Entities.ChecklistTask", b =>
                 {
                     b.Navigation("Executions");
+
+                    b.Navigation("TaskSchedules");
                 });
 
             modelBuilder.Entity("HotelChecklist.Domain.Entities.ChecklistTaskExecution", b =>
@@ -628,6 +795,8 @@ namespace HotelChecklist.Api.Common.Persistence.Migrations
                     b.Navigation("Tasks");
 
                     b.Navigation("TemplateAssets");
+
+                    b.Navigation("TemplateSchedules");
                 });
 
             modelBuilder.Entity("HotelChecklist.Domain.Entities.User", b =>

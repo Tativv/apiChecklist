@@ -1,9 +1,8 @@
 namespace HotelChecklist.Domain.Enums;
 
-public enum ChecklistRecurrenceType
+public enum ScheduleFrequencyType
 {
     Daily,
     Weekly,
-    Monthly,
-    Custom
+    Monthly
 }

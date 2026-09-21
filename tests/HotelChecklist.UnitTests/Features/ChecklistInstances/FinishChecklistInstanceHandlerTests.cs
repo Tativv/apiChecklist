@@ -28,8 +28,14 @@ public class FinishChecklistInstanceHandlerTests
             AssignedUserId = assignedUserId,
             TaskExecutions =
             [
-                new ChecklistTaskExecution { Id = Guid.NewGuid(), TaskId = Guid.NewGuid(), Completed = true, CompletedAt = DateTimeOffset.UtcNow },
-                new ChecklistTaskExecution { Id = Guid.NewGuid(), TaskId = Guid.NewGuid(), Completed = allTasksCompleted, CompletedAt = allTasksCompleted ? DateTimeOffset.UtcNow : null }
+                new ChecklistTaskExecution { Id = Guid.NewGuid(), TaskId = Guid.NewGuid(), Status = TaskExecutionStatus.Completed, ExecutedAtUtc = DateTimeOffset.UtcNow },
+                new ChecklistTaskExecution
+                {
+                    Id = Guid.NewGuid(),
+                    TaskId = Guid.NewGuid(),
+                    Status = allTasksCompleted ? TaskExecutionStatus.Completed : TaskExecutionStatus.Pending,
+                    ExecutedAtUtc = allTasksCompleted ? DateTimeOffset.UtcNow : null
+                }
             ]
         };
 

@@ -1,3 +1,3 @@
 namespace HotelChecklist.Api.Features.ChecklistInstances.CompleteTask;
 
-public sealed record CompleteChecklistTaskResponse(Guid Id, bool Completed, DateTimeOffset? CompletedAt, string? Comment);
+public sealed record CompleteChecklistTaskResponse(Guid Id, string Status, DateTimeOffset? ExecutedAtUtc, string? Comment);

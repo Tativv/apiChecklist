@@ -25,7 +25,7 @@ public sealed class FinishChecklistInstanceHandler(AppDbContext db) : ICommandHa
             return Result.Failure<FinishChecklistInstanceResponse>(
                 Error.Forbidden("ChecklistInstances.NotAssigned", "Solo el usuario asignado o un supervisor pueden finalizar este checklist."));
 
-        if (instance.TaskExecutions.Any(e => !e.Completed))
+        if (instance.TaskExecutions.Any(e => e.Status == TaskExecutionStatus.Pending))
             return Result.Failure<FinishChecklistInstanceResponse>(
                 Error.Validation("ChecklistInstances.PendingTasks", "Todas las tareas deben estar completadas antes de finalizar."));
 

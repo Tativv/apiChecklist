@@ -72,23 +72,50 @@ public static class DbSeeder
         };
         db.Assets.Add(sampleAsset);
 
+        var now = DateTimeOffset.UtcNow;
+
+        Schedule DailyAt(int hour, int minute) => new()
+        {
+            Id = Guid.NewGuid(),
+            FrequencyType = ScheduleFrequencyType.Daily,
+            IntervalValue = 1,
+            TimeOfDay = new TimeOnly(hour, minute),
+            Active = true,
+            CreatedAtUtc = now
+        };
+
+        ChecklistTask ScheduledTask(string name, int order, int hour, int minute, string? description = null) => new()
+        {
+            Id = Guid.NewGuid(),
+            Name = name,
+            Description = description,
+            Order = order,
+            ExecutionMode = TaskExecutionMode.Scheduled,
+            TaskSchedules = [new TaskSchedule { Id = Guid.NewGuid(), Schedule = DailyAt(hour, minute) }]
+        };
+
         var sampleTemplate = new ChecklistTemplate
         {
             Id = Guid.NewGuid(),
             Name = "Checklist diario de habitación",
             Description = "Revisión estándar diaria de limpieza y mantenimiento de habitación.",
             AreaId = roomsArea.Id,
-            RecurrenceType = ChecklistRecurrenceType.Daily,
             EstimatedDurationMinutes = 30,
-            ScheduledTime = new TimeOnly(8, 0),
-            RecurrenceStartDate = DateOnly.FromDateTime(DateTime.UtcNow),
+            TemplateSchedules = [new TemplateSchedule { Id = Guid.NewGuid(), Schedule = DailyAt(8, 0) }],
             Tasks =
             [
-                new ChecklistTask { Id = Guid.NewGuid(), Name = "Tender cama", Description = "Cambiar sábanas y acomodar almohadas.", Order = 1 },
-                new ChecklistTask { Id = Guid.NewGuid(), Name = "Limpiar baño", Order = 2 },
-                new ChecklistTask { Id = Guid.NewGuid(), Name = "Reponer amenities", Order = 3 },
-                new ChecklistTask { Id = Guid.NewGuid(), Name = "Revisar minibar", Order = 4 },
-                new ChecklistTask { Id = Guid.NewGuid(), Name = "Verificar funcionamiento de A/C", Order = 5 }
+                ScheduledTask("Tender cama", 1, 8, 30, "Cambiar sábanas y acomodar almohadas."),
+                ScheduledTask("Limpiar baño", 2, 8, 30),
+                ScheduledTask("Reponer amenities", 3, 8, 30),
+                ScheduledTask("Revisar minibar", 4, 8, 30),
+                ScheduledTask("Verificar funcionamiento de A/C", 5, 8, 30),
+                new ChecklistTask
+                {
+                    Id = Guid.NewGuid(),
+                    Name = "Atención cordial",
+                    Order = 6,
+                    ExecutionMode = TaskExecutionMode.Continuous
+                }
             ]
         };
         db.ChecklistTemplates.Add(sampleTemplate);

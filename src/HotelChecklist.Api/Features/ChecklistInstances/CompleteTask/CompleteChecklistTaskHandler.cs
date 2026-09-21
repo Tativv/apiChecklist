@@ -25,12 +25,13 @@ public sealed class CompleteChecklistTaskHandler(AppDbContext db) : ICommandHand
         if (taskExecution is null)
             return Result.Failure<CompleteChecklistTaskResponse>(Error.NotFound("ChecklistTaskExecutions.NotFound", "Tarea no encontrada."));
 
-        taskExecution.Completed = command.Completed;
-        taskExecution.CompletedAt = command.Completed ? DateTimeOffset.UtcNow : null;
+        taskExecution.Status = command.Completed ? TaskExecutionStatus.Completed : TaskExecutionStatus.Pending;
+        taskExecution.ExecutedAtUtc = command.Completed ? DateTimeOffset.UtcNow : null;
+        taskExecution.CompletedByUserId = command.Completed ? command.ActingUserId : null;
         taskExecution.Comment = command.Comment;
 
         await db.SaveChangesAsync(cancellationToken);
 
-        return Result.Success(new CompleteChecklistTaskResponse(taskExecution.Id, taskExecution.Completed, taskExecution.CompletedAt, taskExecution.Comment));
+        return Result.Success(new CompleteChecklistTaskResponse(taskExecution.Id, taskExecution.Status.ToString(), taskExecution.ExecutedAtUtc, taskExecution.Comment));
     }
 }

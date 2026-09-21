@@ -1,3 +1,5 @@
+using HotelChecklist.Domain.Enums;
+
 namespace HotelChecklist.Domain.Entities;
 
 public sealed class ChecklistTask
@@ -12,7 +14,11 @@ public sealed class ChecklistTask
 
     public int Order { get; set; }
 
+    public TaskExecutionMode ExecutionMode { get; set; } = TaskExecutionMode.Scheduled;
+
     public ChecklistTemplate Template { get; set; } = null!;
 
     public ICollection<ChecklistTaskExecution> Executions { get; set; } = [];
+
+    public ICollection<TaskSchedule> TaskSchedules { get; set; } = [];
 }

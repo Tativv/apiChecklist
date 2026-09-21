@@ -16,6 +16,12 @@ public sealed class AppDbContext(DbContextOptions<AppDbContext> options) : DbCon
 
     public DbSet<TemplateAsset> TemplateAssets => Set<TemplateAsset>();
 
+    public DbSet<Schedule> Schedules => Set<Schedule>();
+
+    public DbSet<TemplateSchedule> TemplateSchedules => Set<TemplateSchedule>();
+
+    public DbSet<TaskSchedule> TaskSchedules => Set<TaskSchedule>();
+
     public DbSet<ChecklistInstance> ChecklistInstances => Set<ChecklistInstance>();
 
     public DbSet<ChecklistTaskExecution> ChecklistTaskExecutions => Set<ChecklistTaskExecution>();

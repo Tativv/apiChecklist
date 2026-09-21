@@ -1,3 +1,4 @@
+using System.Security.Claims;
 using HotelChecklist.Api.Common.Auth;
 using HotelChecklist.Api.Common.Cqrs;
 using HotelChecklist.Api.Common.Errors;
@@ -13,10 +14,11 @@ public static class CompleteChecklistTaskEndpoint
                 Guid instanceId,
                 Guid taskExecutionId,
                 CompleteChecklistTaskRequest request,
+                ClaimsPrincipal user,
                 ICommandHandler<CompleteChecklistTaskCommand, CompleteChecklistTaskResponse> handler,
                 CancellationToken cancellationToken) =>
             {
-                var result = await handler.Handle(request.ToCommand(instanceId, taskExecutionId), cancellationToken);
+                var result = await handler.Handle(request.ToCommand(instanceId, taskExecutionId, user.GetUserId()), cancellationToken);
                 return result.ToHttpResult();
             })
             .AddEndpointFilter<ValidationFilter<CompleteChecklistTaskRequest>>()

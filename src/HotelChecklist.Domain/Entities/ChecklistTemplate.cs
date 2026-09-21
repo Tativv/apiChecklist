@@ -1,5 +1,4 @@
 using HotelChecklist.Domain.Common;
-using HotelChecklist.Domain.Enums;
 
 namespace HotelChecklist.Domain.Entities;
 
@@ -13,21 +12,7 @@ public sealed class ChecklistTemplate : IAuditable
 
     public Guid AreaId { get; set; }
 
-    public ChecklistRecurrenceType RecurrenceType { get; set; }
-
     public int EstimatedDurationMinutes { get; set; }
-
-    public TimeOnly ScheduledTime { get; set; }
-
-    public DateOnly RecurrenceStartDate { get; set; }
-
-    public CustomRecurrenceMode? CustomRecurrenceMode { get; set; }
-
-    public int? RecurrenceIntervalValue { get; set; }
-
-    public RecurrenceIntervalUnit? RecurrenceIntervalUnit { get; set; }
-
-    public int? RecurrenceDaysOfWeekMask { get; set; }
 
     public DateTimeOffset CreatedAtUtc { get; set; }
 
@@ -40,4 +25,6 @@ public sealed class ChecklistTemplate : IAuditable
     public ICollection<ChecklistInstance> Instances { get; set; } = [];
 
     public ICollection<TemplateAsset> TemplateAssets { get; set; } = [];
+
+    public ICollection<TemplateSchedule> TemplateSchedules { get; set; } = [];
 }

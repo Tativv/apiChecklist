@@ -7,12 +7,6 @@ public sealed record UpdateChecklistTemplateCommand(
     string Name,
     string? Description,
     Guid AreaId,
-    string RecurrenceType,
     int EstimatedDurationMinutes,
-    string ScheduledTime,
-    DateOnly? RecurrenceStartDate,
-    string? CustomRecurrenceMode,
-    int? RecurrenceIntervalValue,
-    string? RecurrenceIntervalUnit,
-    List<string>? RecurrenceDaysOfWeek,
+    List<ScheduleInput> Schedules,
     List<ChecklistTaskRequest> Tasks) : ICommand<UpdateChecklistTemplateResponse>;

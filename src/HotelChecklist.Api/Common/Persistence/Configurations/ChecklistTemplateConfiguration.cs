@@ -33,5 +33,10 @@ public sealed class ChecklistTemplateConfiguration : IEntityTypeConfiguration<Ch
             .WithOne(ta => ta.Template)
             .HasForeignKey(ta => ta.TemplateId)
             .OnDelete(DeleteBehavior.Cascade);
+
+        builder.HasMany(t => t.TemplateSchedules)
+            .WithOne(ts => ts.Template)
+            .HasForeignKey(ts => ts.TemplateId)
+            .OnDelete(DeleteBehavior.Cascade);
     }
 }

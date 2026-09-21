@@ -28,7 +28,8 @@ public sealed class GetChecklistInstanceByIdHandler(AppDbContext db) : IQueryHan
                 i.TaskExecutions
                     .OrderBy(e => e.Task.Order)
                     .Select(e => new TaskExecutionResponseItem(
-                        e.Id, e.TaskId, e.Task.Name, e.Task.Order, e.Completed, e.CompletedAt, e.Comment, e.Evidences.Count))
+                        e.Id, e.TaskId, e.Task.Name, e.Task.Order, e.Status.ToString(), e.ScheduledForUtc, e.ExecutedAtUtc,
+                        e.Comment, e.CompletedByUserId, e.Evidences.Count))
                     .ToList()))
             .FirstOrDefaultAsync(cancellationToken);
 

@@ -7,6 +7,7 @@ using HotelChecklist.Api.Features.ChecklistInstances.Finish;
 using HotelChecklist.Api.Features.ChecklistInstances.GenerateScheduled;
 using HotelChecklist.Api.Features.ChecklistInstances.GetById;
 using HotelChecklist.Api.Features.ChecklistInstances.GetEvidenceFile;
+using HotelChecklist.Api.Features.ChecklistInstances.GetUpcomingOccurrences;
 using HotelChecklist.Api.Features.ChecklistInstances.List;
 using HotelChecklist.Api.Features.ChecklistInstances.Reopen;
 using HotelChecklist.Api.Features.ChecklistInstances.Start;
@@ -19,11 +20,14 @@ public static class ChecklistInstancesEndpoints
     public static IServiceCollection AddChecklistInstancesFeature(this IServiceCollection services)
     {
         services.AddScoped<ChecklistInstanceCreationService>();
+        services.AddScoped<ScheduleEvaluationService>();
 
         services.AddScoped<ICommandHandler<CreateChecklistInstanceCommand, CreateChecklistInstanceResponse>, CreateChecklistInstanceHandler>();
         services.AddScoped<IValidator<CreateChecklistInstanceRequest>, CreateChecklistInstanceRequestValidator>();
 
         services.AddScoped<ICommandHandler<GenerateScheduledChecklistsCommand, GenerateScheduledChecklistsResponse>, GenerateScheduledChecklistsHandler>();
+
+        services.AddScoped<IQueryHandler<GetUpcomingOccurrencesQuery, IReadOnlyList<UpcomingOccurrenceItem>>, GetUpcomingOccurrencesHandler>();
 
         services.AddScoped<IQueryHandler<GetChecklistInstanceByIdQuery, GetChecklistInstanceByIdResponse>, GetChecklistInstanceByIdHandler>();
 
@@ -54,6 +58,7 @@ public static class ChecklistInstancesEndpoints
 
         group.MapCreateChecklistInstance();
         group.MapGenerateScheduledChecklists();
+        group.MapGetUpcomingOccurrences();
         group.MapGetChecklistInstanceById();
         group.MapListChecklistInstances();
         group.MapStartChecklistInstance();

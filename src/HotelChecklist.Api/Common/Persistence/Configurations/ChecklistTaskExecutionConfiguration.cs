@@ -13,7 +13,23 @@ public sealed class ChecklistTaskExecutionConfiguration : IEntityTypeConfigurati
         builder.Property(e => e.Comment)
             .HasMaxLength(1000);
 
+        builder.Property(e => e.Status)
+            .HasConversion<string>()
+            .HasMaxLength(20);
+
         builder.HasIndex(e => e.ChecklistInstanceId);
+
+        builder.HasIndex(e => new { e.ChecklistInstanceId, e.TaskId });
+
+        builder.HasOne(e => e.Schedule)
+            .WithMany()
+            .HasForeignKey(e => e.ScheduleId)
+            .OnDelete(DeleteBehavior.SetNull);
+
+        builder.HasOne(e => e.CompletedByUser)
+            .WithMany()
+            .HasForeignKey(e => e.CompletedByUserId)
+            .OnDelete(DeleteBehavior.Restrict);
 
         builder.HasMany(e => e.Evidences)
             .WithOne(ev => ev.ChecklistTaskExecution)

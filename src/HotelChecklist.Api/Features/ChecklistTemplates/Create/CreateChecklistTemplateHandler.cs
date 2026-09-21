@@ -2,7 +2,6 @@ using HotelChecklist.Api.Common.Cqrs;
 using HotelChecklist.Api.Common.Persistence;
 using HotelChecklist.Domain.Common;
 using HotelChecklist.Domain.Entities;
-using HotelChecklist.Domain.Enums;
 using Microsoft.EntityFrameworkCore;
 
 namespace HotelChecklist.Api.Features.ChecklistTemplates.Create;
@@ -22,21 +21,12 @@ public sealed class CreateChecklistTemplateHandler(AppDbContext db) : ICommandHa
             Name = command.Name,
             Description = command.Description,
             AreaId = command.AreaId,
-            RecurrenceType = Enum.Parse<ChecklistRecurrenceType>(command.RecurrenceType, ignoreCase: true),
             EstimatedDurationMinutes = command.EstimatedDurationMinutes,
-            Tasks = command.Tasks
-                .Select(t => new ChecklistTask { Id = Guid.NewGuid(), Name = t.Name, Description = t.Description, Order = t.Order })
-                .ToList()
+            TemplateSchedules = command.Schedules
+                .Select(s => new TemplateSchedule { Id = Guid.NewGuid(), Schedule = s.ToSchedule() })
+                .ToList(),
+            Tasks = command.Tasks.Select(t => t.ToTask()).ToList()
         };
-
-        ChecklistTemplateSchedulingMapping.ApplyScheduling(
-            template,
-            command.ScheduledTime,
-            command.RecurrenceStartDate,
-            command.CustomRecurrenceMode,
-            command.RecurrenceIntervalValue,
-            command.RecurrenceIntervalUnit,
-            command.RecurrenceDaysOfWeek);
 
         db.ChecklistTemplates.Add(template);
         await db.SaveChangesAsync(cancellationToken);

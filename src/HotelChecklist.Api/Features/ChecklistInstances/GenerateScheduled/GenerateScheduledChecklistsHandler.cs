@@ -5,7 +5,10 @@ using Microsoft.EntityFrameworkCore;
 
 namespace HotelChecklist.Api.Features.ChecklistInstances.GenerateScheduled;
 
-public sealed class GenerateScheduledChecklistsHandler(AppDbContext db, ChecklistInstanceCreationService creationService)
+public sealed class GenerateScheduledChecklistsHandler(
+    AppDbContext db,
+    ChecklistInstanceCreationService creationService,
+    ScheduleEvaluationService evaluationService)
     : ICommandHandler<GenerateScheduledChecklistsCommand, GenerateScheduledChecklistsResponse>
 {
     public async Task<Result<GenerateScheduledChecklistsResponse>> Handle(GenerateScheduledChecklistsCommand command, CancellationToken cancellationToken)
@@ -14,6 +17,7 @@ public sealed class GenerateScheduledChecklistsHandler(AppDbContext db, Checklis
 
         var templates = await db.ChecklistTemplates
             .Include(t => t.TemplateAssets)
+            .Include(t => t.TemplateSchedules).ThenInclude(ts => ts.Schedule)
             .ToListAsync(cancellationToken);
 
         var created = 0;
@@ -21,7 +25,7 @@ public sealed class GenerateScheduledChecklistsHandler(AppDbContext db, Checklis
 
         foreach (var template in templates)
         {
-            if (!ChecklistTemplateRecurrenceEvaluator.ShouldGenerate(template, date))
+            if (!evaluationService.ShouldExecuteTemplate(template, date))
                 continue;
 
             foreach (var templateAsset in template.TemplateAssets)

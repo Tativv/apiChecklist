@@ -2,7 +2,6 @@ using HotelChecklist.Api.Common.Cqrs;
 using HotelChecklist.Api.Common.Persistence;
 using HotelChecklist.Domain.Common;
 using HotelChecklist.Domain.Entities;
-using HotelChecklist.Domain.Enums;
 using Microsoft.EntityFrameworkCore;
 
 namespace HotelChecklist.Api.Features.ChecklistTemplates.Update;
@@ -12,7 +11,8 @@ public sealed class UpdateChecklistTemplateHandler(AppDbContext db) : ICommandHa
     public async Task<Result<UpdateChecklistTemplateResponse>> Handle(UpdateChecklistTemplateCommand command, CancellationToken cancellationToken)
     {
         var template = await db.ChecklistTemplates
-            .Include(t => t.Tasks)
+            .Include(t => t.Tasks).ThenInclude(t => t.TaskSchedules)
+            .Include(t => t.TemplateSchedules)
             .FirstOrDefaultAsync(t => t.Id == command.Id, cancellationToken);
 
         if (template is null)
@@ -30,24 +30,28 @@ public sealed class UpdateChecklistTemplateHandler(AppDbContext db) : ICommandHa
             return Result.Failure<UpdateChecklistTemplateResponse>(
                 Error.Conflict("ChecklistTemplates.HasExecutions", "No se pueden modificar las tareas de un template con checklists ya ejecutados."));
 
+        var orphanedScheduleIds = template.TemplateSchedules.Select(ts => ts.ScheduleId)
+            .Concat(template.Tasks.SelectMany(t => t.TaskSchedules).Select(ts => ts.ScheduleId))
+            .ToList();
+
         template.Name = command.Name;
         template.Description = command.Description;
         template.AreaId = command.AreaId;
-        template.RecurrenceType = Enum.Parse<ChecklistRecurrenceType>(command.RecurrenceType, ignoreCase: true);
         template.EstimatedDurationMinutes = command.EstimatedDurationMinutes;
 
-        ChecklistTemplateSchedulingMapping.ApplyScheduling(
-            template,
-            command.ScheduledTime,
-            command.RecurrenceStartDate,
-            command.CustomRecurrenceMode,
-            command.RecurrenceIntervalValue,
-            command.RecurrenceIntervalUnit,
-            command.RecurrenceDaysOfWeek);
+        template.TemplateSchedules.Clear();
+        foreach (var schedule in command.Schedules)
+            template.TemplateSchedules.Add(new TemplateSchedule { Id = Guid.NewGuid(), Schedule = schedule.ToSchedule() });
 
         template.Tasks.Clear();
         foreach (var task in command.Tasks)
-            template.Tasks.Add(new ChecklistTask { Id = Guid.NewGuid(), Name = task.Name, Description = task.Description, Order = task.Order });
+            template.Tasks.Add(task.ToTask());
+
+        if (orphanedScheduleIds.Count > 0)
+        {
+            var orphaned = await db.Schedules.Where(s => orphanedScheduleIds.Contains(s.Id)).ToListAsync(cancellationToken);
+            db.Schedules.RemoveRange(orphaned);
+        }
 
         await db.SaveChangesAsync(cancellationToken);
 

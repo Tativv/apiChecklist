@@ -16,7 +16,7 @@ public sealed class ChecklistInstanceCreationService(AppDbContext db)
         CancellationToken cancellationToken)
     {
         var template = await db.ChecklistTemplates
-            .Include(t => t.Tasks)
+            .Include(t => t.Tasks).ThenInclude(t => t.TaskSchedules).ThenInclude(ts => ts.Schedule)
             .FirstOrDefaultAsync(t => t.Id == templateId, cancellationToken);
 
         if (template is null)
@@ -50,13 +50,28 @@ public sealed class ChecklistInstanceCreationService(AppDbContext db)
             Date = date,
             Status = ChecklistStatus.Pending,
             AssignedUserId = assignedUserId,
-            TaskExecutions = template.Tasks
-                .Select(t => new ChecklistTaskExecution { Id = Guid.NewGuid(), TaskId = t.Id, Completed = false })
-                .ToList()
+            TaskExecutions = template.Tasks.SelectMany(task => BuildExecutions(task, date)).ToList()
         };
 
         db.ChecklistInstances.Add(instance);
 
         return Result.Success(instance);
+    }
+
+    private static IEnumerable<ChecklistTaskExecution> BuildExecutions(ChecklistTask task, DateOnly date)
+    {
+        if (task.ExecutionMode == TaskExecutionMode.Continuous)
+        {
+            return [new ChecklistTaskExecution { Id = Guid.NewGuid(), TaskId = task.Id, Status = TaskExecutionStatus.Pending }];
+        }
+
+        return task.TaskSchedules.Select(ts => new ChecklistTaskExecution
+        {
+            Id = Guid.NewGuid(),
+            TaskId = task.Id,
+            ScheduleId = ts.ScheduleId,
+            ScheduledForUtc = new DateTimeOffset(date.Year, date.Month, date.Day, ts.Schedule.TimeOfDay.Hour, ts.Schedule.TimeOfDay.Minute, 0, TimeSpan.Zero),
+            Status = TaskExecutionStatus.Pending
+        });
     }
 }
