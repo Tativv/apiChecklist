@@ -9,7 +9,7 @@ public sealed class CreateChecklistInstanceHandler(AppDbContext db, ChecklistIns
 {
     public async Task<Result<CreateChecklistInstanceResponse>> Handle(CreateChecklistInstanceCommand command, CancellationToken cancellationToken)
     {
-        var result = await creationService.CreateAsync(command.TemplateId, command.AssetId, command.Date, command.AssignedUserId, cancellationToken);
+        var result = await creationService.CreateAsync(command.TemplateId, command.AssetId, command.Date, cancellationToken);
 
         if (result.IsFailure)
             return Result.Failure<CreateChecklistInstanceResponse>(result.Error);

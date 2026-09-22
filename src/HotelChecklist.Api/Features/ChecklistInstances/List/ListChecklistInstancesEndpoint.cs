@@ -1,3 +1,4 @@
+using System.Security.Claims;
 using HotelChecklist.Api.Common.Auth;
 using HotelChecklist.Api.Common.Cqrs;
 using HotelChecklist.Api.Common.Errors;
@@ -14,12 +15,13 @@ public static class ListChecklistInstancesEndpoint
                 Guid? areaId,
                 Guid? assetId,
                 string? status,
-                Guid? assignedUserId,
+                ClaimsPrincipal user,
                 IQueryHandler<ListChecklistInstancesQuery, IReadOnlyList<ListChecklistInstancesResponseItem>> handler,
                 CancellationToken cancellationToken) =>
             {
-                var result = await handler.Handle(
-                    new ListChecklistInstancesQuery(fromDate, toDate, areaId, assetId, status, assignedUserId), cancellationToken);
+                var query = new ListChecklistInstancesQuery(
+                    fromDate, toDate, areaId, assetId, status, user.GetUserId(), user.IsExactlySupervisor());
+                var result = await handler.Handle(query, cancellationToken);
                 return result.ToHttpResult();
             })
             .RequireAuthorization(Policies.AnyRole)

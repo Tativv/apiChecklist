@@ -14,13 +14,13 @@ public static class DbSeeder
         if (await db.Users.AnyAsync(cancellationToken))
             return;
 
-        var admin = new User
+        var directoria = new User
         {
             Id = Guid.NewGuid(),
-            Name = "Admin Demo",
-            Email = "admin@hotelchecklist.local",
-            Role = UserRole.Admin,
-            PasswordHash = passwordHasher.Hash("Admin123!"),
+            Name = "Directoria Demo",
+            Email = "directoria@hotelchecklist.local",
+            Role = UserRole.Directoria,
+            PasswordHash = passwordHasher.Hash("Directoria123!"),
             Active = true
         };
 
@@ -34,33 +34,35 @@ public static class DbSeeder
             Active = true
         };
 
-        var operatorUser = new User
+        var colaborador = new User
         {
             Id = Guid.NewGuid(),
-            Name = "Operator Demo",
-            Email = "operator@hotelchecklist.local",
-            Role = UserRole.Operator,
-            PasswordHash = passwordHasher.Hash("Operator123!"),
+            Name = "Colaborador Demo",
+            Email = "colaborador@hotelchecklist.local",
+            Role = UserRole.Colaborador,
+            PasswordHash = passwordHasher.Hash("Colaborador123!"),
             Active = true
         };
 
-        var manager = new User
+        var gerencia = new User
         {
             Id = Guid.NewGuid(),
-            Name = "Manager Demo",
-            Email = "manager@hotelchecklist.local",
-            Role = UserRole.Manager,
-            PasswordHash = passwordHasher.Hash("Manager123!"),
+            Name = "Gerencia Demo",
+            Email = "gerencia@hotelchecklist.local",
+            Role = UserRole.Gerencia,
+            PasswordHash = passwordHasher.Hash("Gerencia123!"),
             Active = true
         };
 
-        db.Users.AddRange(admin, supervisor, operatorUser, manager);
+        db.Users.AddRange(directoria, supervisor, colaborador, gerencia);
 
         var areaNames = new[] { "Habitaciones", "Lobby", "Restaurante", "Piscina", "Mantenimiento" };
         var areas = areaNames.Select(name => new Area { Id = Guid.NewGuid(), Name = name }).ToList();
         db.Areas.AddRange(areas);
 
         var roomsArea = areas.First(a => a.Name == "Habitaciones");
+
+        db.UserAreas.Add(new UserArea { Id = Guid.NewGuid(), UserId = supervisor.Id, AreaId = roomsArea.Id });
 
         var sampleAsset = new Asset
         {

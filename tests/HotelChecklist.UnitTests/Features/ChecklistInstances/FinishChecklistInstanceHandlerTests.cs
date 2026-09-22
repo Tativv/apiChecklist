@@ -25,16 +25,23 @@ public class FinishChecklistInstanceHandlerTests
             Date = DateOnly.FromDateTime(DateTime.UtcNow),
             Status = ChecklistStatus.InProgress,
             StartedAt = DateTimeOffset.UtcNow.AddMinutes(-15),
-            AssignedUserId = assignedUserId,
             TaskExecutions =
             [
-                new ChecklistTaskExecution { Id = Guid.NewGuid(), TaskId = Guid.NewGuid(), Status = TaskExecutionStatus.Completed, ExecutedAtUtc = DateTimeOffset.UtcNow },
+                new ChecklistTaskExecution
+                {
+                    Id = Guid.NewGuid(),
+                    TaskId = Guid.NewGuid(),
+                    Status = TaskExecutionStatus.Completed,
+                    ExecutedAtUtc = DateTimeOffset.UtcNow,
+                    AssignedUserId = assignedUserId
+                },
                 new ChecklistTaskExecution
                 {
                     Id = Guid.NewGuid(),
                     TaskId = Guid.NewGuid(),
                     Status = allTasksCompleted ? TaskExecutionStatus.Completed : TaskExecutionStatus.Pending,
-                    ExecutedAtUtc = allTasksCompleted ? DateTimeOffset.UtcNow : null
+                    ExecutedAtUtc = allTasksCompleted ? DateTimeOffset.UtcNow : null,
+                    AssignedUserId = assignedUserId
                 }
             ]
         };

@@ -18,7 +18,8 @@ public static class CompleteChecklistTaskEndpoint
                 ICommandHandler<CompleteChecklistTaskCommand, CompleteChecklistTaskResponse> handler,
                 CancellationToken cancellationToken) =>
             {
-                var result = await handler.Handle(request.ToCommand(instanceId, taskExecutionId, user.GetUserId()), cancellationToken);
+                var result = await handler.Handle(
+                    request.ToCommand(instanceId, taskExecutionId, user.GetUserId(), user.IsSupervisorOrAbove()), cancellationToken);
                 return result.ToHttpResult();
             })
             .AddEndpointFilter<ValidationFilter<CompleteChecklistTaskRequest>>()
@@ -27,6 +28,7 @@ public static class CompleteChecklistTaskEndpoint
             .Produces<CompleteChecklistTaskResponse>()
             .ProducesValidationProblem()
             .ProducesProblem(StatusCodes.Status404NotFound)
-            .ProducesProblem(StatusCodes.Status409Conflict);
+            .ProducesProblem(StatusCodes.Status409Conflict)
+            .ProducesProblem(StatusCodes.Status403Forbidden);
     }
 }

@@ -25,17 +25,6 @@ public sealed class ChecklistInstanceConfiguration : IEntityTypeConfiguration<Ch
             .HasForeignKey(i => i.AssetId)
             .OnDelete(DeleteBehavior.Restrict);
 
-        builder.HasOne(i => i.AssignedUser)
-            .WithMany(u => u.AssignedInstances)
-            .HasForeignKey(i => i.AssignedUserId)
-            .IsRequired(false)
-            .OnDelete(DeleteBehavior.Restrict);
-
-        builder.HasOne(i => i.ApprovedByUser)
-            .WithMany(u => u.ApprovedInstances)
-            .HasForeignKey(i => i.ApprovedByUserId)
-            .OnDelete(DeleteBehavior.Restrict);
-
         builder.HasMany(i => i.TaskExecutions)
             .WithOne(e => e.ChecklistInstance)
             .HasForeignKey(e => e.ChecklistInstanceId)

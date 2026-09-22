@@ -11,9 +11,6 @@ public sealed record GetChecklistInstanceByIdResponse(
     DateTimeOffset? StartedAt,
     DateTimeOffset? CompletedAt,
     long? DurationSeconds,
-    Guid? AssignedUserId,
-    Guid? ApprovedByUserId,
-    DateTimeOffset? ApprovedAt,
     List<TaskExecutionResponseItem> TaskExecutions);
 
 public sealed record TaskExecutionResponseItem(
@@ -25,5 +22,9 @@ public sealed record TaskExecutionResponseItem(
     DateTimeOffset? ScheduledForUtc,
     DateTimeOffset? ExecutedAtUtc,
     string? Comment,
-    Guid? CompletedByUserId,
+    Guid? AssignedUserId,
+    Guid? CreatedByUserId,
+    Guid? ExecutedByUserId,
+    Guid? ApprovedByUserId,
+    DateTimeOffset? ApprovedAt,
     int EvidenceCount);

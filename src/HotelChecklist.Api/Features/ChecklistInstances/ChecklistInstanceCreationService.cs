@@ -12,7 +12,6 @@ public sealed class ChecklistInstanceCreationService(AppDbContext db)
         Guid templateId,
         Guid assetId,
         DateOnly date,
-        Guid? assignedUserId,
         CancellationToken cancellationToken)
     {
         var template = await db.ChecklistTemplates
@@ -26,14 +25,6 @@ public sealed class ChecklistInstanceCreationService(AppDbContext db)
 
         if (!assetExists)
             return Result.Failure<ChecklistInstance>(Error.NotFound("Assets.NotFound", "Activo no encontrado."));
-
-        if (assignedUserId is not null)
-        {
-            var userExists = await db.Users.AnyAsync(u => u.Id == assignedUserId && u.Active, cancellationToken);
-
-            if (!userExists)
-                return Result.Failure<ChecklistInstance>(Error.NotFound("Users.NotFound", "Usuario asignado no encontrado."));
-        }
 
         var alreadyExists = await db.ChecklistInstances
             .AnyAsync(i => i.TemplateId == templateId && i.AssetId == assetId && i.Date == date, cancellationToken);
@@ -49,7 +40,6 @@ public sealed class ChecklistInstanceCreationService(AppDbContext db)
             AssetId = assetId,
             Date = date,
             Status = ChecklistStatus.Pending,
-            AssignedUserId = assignedUserId,
             TaskExecutions = template.Tasks.SelectMany(task => BuildExecutions(task, date)).ToList()
         };
 

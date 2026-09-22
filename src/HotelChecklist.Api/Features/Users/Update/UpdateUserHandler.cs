@@ -1,7 +1,9 @@
 using HotelChecklist.Api.Common.Cqrs;
 using HotelChecklist.Api.Common.Persistence;
 using HotelChecklist.Domain.Common;
+using HotelChecklist.Domain.Entities;
 using HotelChecklist.Domain.Enums;
+using Microsoft.EntityFrameworkCore;
 
 namespace HotelChecklist.Api.Features.Users.Update;
 
@@ -9,13 +11,23 @@ public sealed class UpdateUserHandler(AppDbContext db) : ICommandHandler<UpdateU
 {
     public async Task<Result<UpdateUserResponse>> Handle(UpdateUserCommand command, CancellationToken cancellationToken)
     {
-        var user = await db.Users.FindAsync([command.Id], cancellationToken);
+        var user = await db.Users.Include(u => u.UserAreas).FirstOrDefaultAsync(u => u.Id == command.Id, cancellationToken);
 
         if (user is null)
             return Result.Failure<UpdateUserResponse>(Error.NotFound("Users.NotFound", "Usuario no encontrado."));
 
+        var areaIds = command.AreaIds.Distinct().ToList();
+        var validAreaCount = await db.Areas.CountAsync(a => areaIds.Contains(a.Id), cancellationToken);
+
+        if (validAreaCount != areaIds.Count)
+            return Result.Failure<UpdateUserResponse>(Error.NotFound("Areas.NotFound", "Una o más áreas no existen."));
+
         user.Name = command.Name;
         user.Role = Enum.Parse<UserRole>(command.Role, ignoreCase: true);
+
+        user.UserAreas.Clear();
+        foreach (var areaId in areaIds)
+            user.UserAreas.Add(new UserArea { Id = Guid.NewGuid(), AreaId = areaId });
 
         await db.SaveChangesAsync(cancellationToken);
 

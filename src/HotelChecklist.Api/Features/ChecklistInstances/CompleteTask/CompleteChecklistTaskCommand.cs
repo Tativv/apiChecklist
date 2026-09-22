@@ -7,4 +7,5 @@ public sealed record CompleteChecklistTaskCommand(
     Guid TaskExecutionId,
     bool Completed,
     string? Comment,
-    Guid ActingUserId) : ICommand<CompleteChecklistTaskResponse>;
+    Guid ActingUserId,
+    bool ActingUserIsSupervisorOrAbove) : ICommand<CompleteChecklistTaskResponse>;

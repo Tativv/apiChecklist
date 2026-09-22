@@ -25,9 +25,15 @@ public sealed class CompleteChecklistTaskHandler(AppDbContext db) : ICommandHand
         if (taskExecution is null)
             return Result.Failure<CompleteChecklistTaskResponse>(Error.NotFound("ChecklistTaskExecutions.NotFound", "Tarea no encontrada."));
 
+        var isOwnTask = taskExecution.AssignedUserId == command.ActingUserId;
+
+        if (!command.ActingUserIsSupervisorOrAbove && !isOwnTask)
+            return Result.Failure<CompleteChecklistTaskResponse>(
+                Error.Forbidden("ChecklistTaskExecutions.NotAssigned", "Solo el colaborador asignado o un supervisor pueden completar esta tarea."));
+
         taskExecution.Status = command.Completed ? TaskExecutionStatus.Completed : TaskExecutionStatus.Pending;
         taskExecution.ExecutedAtUtc = command.Completed ? DateTimeOffset.UtcNow : null;
-        taskExecution.CompletedByUserId = command.Completed ? command.ActingUserId : null;
+        taskExecution.ExecutedByUserId = command.Completed ? command.ActingUserId : null;
         taskExecution.Comment = command.Comment;
 
         await db.SaveChangesAsync(cancellationToken);

@@ -32,7 +32,7 @@ public class ChecklistLifecycleTests : IClassFixture<CustomWebApplicationFactory
         await _factory.InitializeAsync();
         _client = _factory.CreateClient();
 
-        var loginResponse = await _client.PostAsJsonAsync("/api/auth/login", new LoginRequest("admin@hotelchecklist.local", "Admin123!"));
+        var loginResponse = await _client.PostAsJsonAsync("/api/auth/login", new LoginRequest("gerencia@hotelchecklist.local", "Gerencia123!"));
         loginResponse.StatusCode.Should().Be(HttpStatusCode.OK);
 
         var login = await loginResponse.Content.ReadFromJsonAsync<LoginResponse>();
@@ -75,7 +75,7 @@ public class ChecklistLifecycleTests : IClassFixture<CustomWebApplicationFactory
 
         var createInstanceResponse = await _client.PostAsJsonAsync(
             "/api/checklist-instances",
-            new CreateChecklistInstanceRequest(template.Id, asset.Id, DateOnly.FromDateTime(DateTime.UtcNow), null));
+            new CreateChecklistInstanceRequest(template.Id, asset.Id, DateOnly.FromDateTime(DateTime.UtcNow)));
         createInstanceResponse.StatusCode.Should().Be(HttpStatusCode.Created);
         var createdInstance = await createInstanceResponse.Content.ReadFromJsonAsync<CreateChecklistInstanceResponse>();
         var instanceId = createdInstance!.Id;

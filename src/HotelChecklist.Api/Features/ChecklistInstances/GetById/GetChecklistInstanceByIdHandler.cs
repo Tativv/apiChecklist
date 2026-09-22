@@ -22,14 +22,11 @@ public sealed class GetChecklistInstanceByIdHandler(AppDbContext db) : IQueryHan
                 i.StartedAt,
                 i.CompletedAt,
                 i.DurationSeconds,
-                i.AssignedUserId,
-                i.ApprovedByUserId,
-                i.ApprovedAt,
                 i.TaskExecutions
                     .OrderBy(e => e.Task.Order)
                     .Select(e => new TaskExecutionResponseItem(
                         e.Id, e.TaskId, e.Task.Name, e.Task.Order, e.Status.ToString(), e.ScheduledForUtc, e.ExecutedAtUtc,
-                        e.Comment, e.CompletedByUserId, e.Evidences.Count))
+                        e.Comment, e.AssignedUserId, e.CreatedByUserId, e.ExecutedByUserId, e.ApprovedByUserId, e.ApprovedAt, e.Evidences.Count))
                     .ToList()))
             .FirstOrDefaultAsync(cancellationToken);
 

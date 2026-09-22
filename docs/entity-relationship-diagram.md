@@ -1,8 +1,8 @@
 # Diagrama entidad-relación — Dominio de Checklists
 
-Generado a partir del modelo de dominio tras el rediseño del sistema de recurrencia
-(commit `ConvertToGenericSchedule`). Refleja el estado real de `HotelChecklist.Domain.Entities`
-y las migraciones de PostgreSQL aplicadas.
+Generado a partir del modelo de dominio tras el rediseño de asignación por tarea
+(migración `AssignTasksToUsersAndUserAreas`). Refleja el estado real de
+`HotelChecklist.Domain.Entities` y las migraciones de PostgreSQL aplicadas.
 
 ## Idea central
 
@@ -14,12 +14,35 @@ cada fila de `TemplateSchedule` o `TaskSchedule` es dueña de su propio `Schedul
   instancia ya generada (una tarea `Scheduled` con 3 `TaskSchedule` produce 3
   `ChecklistTaskExecution` el mismo día; una tarea `Continuous` produce 1 sin horario).
 
+**La asignación de responsables vive a nivel de tarea, no de instancia.** `ChecklistInstance` no
+tiene ningún campo ligado a `User`: es sólo la ejecución del template para un asset en una fecha.
+Cada `ChecklistTaskExecution` lleva 4 relaciones independientes con `User`:
+
+- `assigned_user_id` — el colaborador responsable de ejecutarla (lo define un Supervisor+).
+- `created_by_user_id` — el Supervisor que hizo esa asignación.
+- `executed_by_user_id` — quien efectivamente la completó (colaborador asignado o Supervisor+).
+- `approved_by_user_id` / `approved_at` — quien la aprobó (al aprobar la instancia, se aprueban en
+  bloque todas sus tareas `Completed`; al reabrir la instancia, se limpian ambos campos en cada
+  tarea).
+
+Los roles (`UserRole`) son, en orden jerárquico: `Directoria, Supervisor, Colaborador, Gerencia`
+— Directoria y Gerencia tienen los mismos permisos que "Supervisor o superior" en todo el dominio
+de checklists; la jerarquía de negocio real es Gerencia > Directoria > Supervisor > Colaborador,
+pero a nivel de autorización sólo importa la distinción "Supervisor o superior" vs. "Colaborador".
+Un `User` cubre cero o más `Area` a través de `UserArea` (many-to-many) — típicamente un
+Supervisor cubre una o varias áreas, y ese vínculo es lo que acota qué instancias puede
+listar/asignar (`ListChecklistInstancesHandler`, `AssignTaskHandler`) cuando el rol es
+**exactamente** Supervisor (Gerencia/Directoria ven y asignan sin restricción de área).
+
 ## Diagrama
 
 ```mermaid
 erDiagram
     AREA ||--o{ ASSET : contiene
     AREA ||--o{ CHECKLIST_TEMPLATE : agrupa
+    AREA ||--o{ USER_AREA : "cubierta por"
+
+    USER ||--o{ USER_AREA : cubre
 
     CHECKLIST_TEMPLATE ||--o{ CHECKLIST_TASK : define
     CHECKLIST_TEMPLATE ||--o{ TEMPLATE_SCHEDULE : "se ejecuta según"
@@ -37,10 +60,12 @@ erDiagram
     ASSET ||--o{ CHECKLIST_INSTANCE : "es objeto de"
 
     CHECKLIST_INSTANCE ||--o{ CHECKLIST_TASK_EXECUTION : contiene
-    CHECKLIST_INSTANCE }o--o| USER : "asignado a / aprobado por"
 
     CHECKLIST_TASK_EXECUTION ||--o{ CHECKLIST_TASK_EVIDENCE : adjunta
-    CHECKLIST_TASK_EXECUTION }o--o| USER : "completado por"
+    CHECKLIST_TASK_EXECUTION }o--o| USER : "asignada a"
+    CHECKLIST_TASK_EXECUTION }o--o| USER : "asignada por"
+    CHECKLIST_TASK_EXECUTION }o--o| USER : "ejecutada por"
+    CHECKLIST_TASK_EXECUTION }o--o| USER : "aprobada por"
 
     CHECKLIST_TASK_EVIDENCE }o--|| USER : "subido por"
 
@@ -61,8 +86,14 @@ erDiagram
         uuid id PK
         string name
         string email
-        string role
+        string role "Directoria | Supervisor | Colaborador | Gerencia"
         bool active
+    }
+
+    USER_AREA {
+        uuid id PK
+        uuid user_id FK
+        uuid area_id FK
     }
 
     CHECKLIST_TEMPLATE {
@@ -122,9 +153,6 @@ erDiagram
         timestamptz started_at
         timestamptz completed_at
         long duration_seconds
-        uuid assigned_user_id FK
-        uuid approved_by_user_id FK
-        timestamptz approved_at
     }
 
     CHECKLIST_TASK_EXECUTION {
@@ -136,7 +164,11 @@ erDiagram
         timestamptz executed_at_utc "nullable"
         enum status "Pending | Completed | Skipped"
         string comment
-        uuid completed_by_user_id FK "nullable"
+        uuid assigned_user_id FK "nullable — colaborador responsable"
+        uuid created_by_user_id FK "nullable — supervisor que asignó"
+        uuid executed_by_user_id FK "nullable — quien completó"
+        uuid approved_by_user_id FK "nullable — quien aprobó"
+        timestamptz approved_at "nullable"
     }
 
     CHECKLIST_TASK_EVIDENCE {
@@ -153,6 +185,17 @@ erDiagram
 
 ## Notas de diseño
 
+- **`ChecklistInstance` no conoce usuarios**: nunca tuvo (ni tiene) un "responsable" único; la
+  asignación siempre fue, es y será a nivel de `ChecklistTaskExecution`. `Start`/`Finish` de una
+  instancia están permitidos para Supervisor+ o para cualquier colaborador que tenga al menos una
+  `ChecklistTaskExecution` asignada en esa instancia (`instance.TaskExecutions.Any(e =>
+  e.AssignedUserId == ActingUserId)`).
+- **`CompleteTask` exige pertenencia**: sólo el colaborador en `AssignedUserId` de esa tarea
+  específica, o un Supervisor+, pueden completarla — una tarea sin asignar sólo la completa
+  Supervisor+.
+- **`UserArea` acota qué puede ver/asignar un Supervisor exacto**: Gerencia y Directoria operan
+  sin restricción de área; un usuario con rol exactamente `Supervisor` sólo ve (`List`) y asigna
+  (`AssignTask`) instancias cuyo template pertenece a una de sus áreas en `UserArea`.
 - **Propiedad exclusiva de `Schedule`**: no hay tabla intermedia adicional ni reuso entre
   templates/tareas. Editar el set de horarios de un template o tarea borra y recrea sus filas de
   `Schedule` (mismo patrón "reemplazar el set completo" que ya usa

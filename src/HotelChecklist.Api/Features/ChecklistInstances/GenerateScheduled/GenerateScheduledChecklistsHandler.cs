@@ -30,7 +30,7 @@ public sealed class GenerateScheduledChecklistsHandler(
 
             foreach (var templateAsset in template.TemplateAssets)
             {
-                var result = await creationService.CreateAsync(template.Id, templateAsset.AssetId, date, assignedUserId: null, cancellationToken);
+                var result = await creationService.CreateAsync(template.Id, templateAsset.AssetId, date, cancellationToken);
 
                 if (result.IsSuccess)
                     created++;

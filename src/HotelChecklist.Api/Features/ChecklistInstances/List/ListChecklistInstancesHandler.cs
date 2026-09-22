@@ -24,16 +24,23 @@ public sealed class ListChecklistInstancesHandler(AppDbContext db) : IQueryHandl
         if (query.AssetId is not null)
             instancesQuery = instancesQuery.Where(i => i.AssetId == query.AssetId);
 
-        if (query.AssignedUserId is not null)
-            instancesQuery = instancesQuery.Where(i => i.AssignedUserId == query.AssignedUserId);
-
         if (!string.IsNullOrWhiteSpace(query.Status) && Enum.TryParse<ChecklistStatus>(query.Status, ignoreCase: true, out var status))
             instancesQuery = instancesQuery.Where(i => i.Status == status);
+
+        if (query.RestrictToSupervisedAreas)
+        {
+            var supervisedAreaIds = await db.UserAreas
+                .Where(ua => ua.UserId == query.ActingUserId)
+                .Select(ua => ua.AreaId)
+                .ToListAsync(cancellationToken);
+
+            instancesQuery = instancesQuery.Where(i => supervisedAreaIds.Contains(i.Asset.AreaId));
+        }
 
         var instances = await instancesQuery
             .OrderByDescending(i => i.Date)
             .Select(i => new ListChecklistInstancesResponseItem(
-                i.Id, i.Template.Name, i.AssetId, i.Asset.Name, i.Asset.AreaId, i.Date, i.Status.ToString(), i.AssignedUserId, i.DurationSeconds))
+                i.Id, i.Template.Name, i.AssetId, i.Asset.Name, i.Asset.AreaId, i.Date, i.Status.ToString(), i.DurationSeconds))
             .ToListAsync(cancellationToken);
 
         return Result.Success<IReadOnlyList<ListChecklistInstancesResponseItem>>(instances);

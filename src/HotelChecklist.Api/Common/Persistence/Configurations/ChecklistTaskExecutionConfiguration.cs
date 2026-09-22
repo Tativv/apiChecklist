@@ -21,14 +21,31 @@ public sealed class ChecklistTaskExecutionConfiguration : IEntityTypeConfigurati
 
         builder.HasIndex(e => new { e.ChecklistInstanceId, e.TaskId });
 
+        builder.HasIndex(e => e.AssignedUserId);
+
         builder.HasOne(e => e.Schedule)
             .WithMany()
             .HasForeignKey(e => e.ScheduleId)
             .OnDelete(DeleteBehavior.SetNull);
 
-        builder.HasOne(e => e.CompletedByUser)
+        builder.HasOne(e => e.AssignedUser)
             .WithMany()
-            .HasForeignKey(e => e.CompletedByUserId)
+            .HasForeignKey(e => e.AssignedUserId)
+            .OnDelete(DeleteBehavior.Restrict);
+
+        builder.HasOne(e => e.CreatedByUser)
+            .WithMany()
+            .HasForeignKey(e => e.CreatedByUserId)
+            .OnDelete(DeleteBehavior.Restrict);
+
+        builder.HasOne(e => e.ExecutedByUser)
+            .WithMany()
+            .HasForeignKey(e => e.ExecutedByUserId)
+            .OnDelete(DeleteBehavior.Restrict);
+
+        builder.HasOne(e => e.ApprovedByUser)
+            .WithMany()
+            .HasForeignKey(e => e.ApprovedByUserId)
             .OnDelete(DeleteBehavior.Restrict);
 
         builder.HasMany(e => e.Evidences)

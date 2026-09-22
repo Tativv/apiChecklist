@@ -20,7 +20,8 @@ public sealed class ListUsersHandler(AppDbContext db) : IQueryHandler<ListUsersQ
 
         var users = await usersQuery
             .OrderBy(u => u.Name)
-            .Select(u => new ListUsersResponseItem(u.Id, u.Name, u.Email, u.Role.ToString(), u.Active))
+            .Select(u => new ListUsersResponseItem(
+                u.Id, u.Name, u.Email, u.Role.ToString(), u.Active, u.UserAreas.Select(ua => ua.AreaId).ToList()))
             .ToListAsync(cancellationToken);
 
         return Result.Success<IReadOnlyList<ListUsersResponseItem>>(users);

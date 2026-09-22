@@ -1,12 +1,14 @@
 using FluentValidation;
 using HotelChecklist.Api.Common.Cqrs;
 using HotelChecklist.Api.Features.ChecklistInstances.Approve;
+using HotelChecklist.Api.Features.ChecklistInstances.AssignTask;
 using HotelChecklist.Api.Features.ChecklistInstances.CompleteTask;
 using HotelChecklist.Api.Features.ChecklistInstances.Create;
 using HotelChecklist.Api.Features.ChecklistInstances.Finish;
 using HotelChecklist.Api.Features.ChecklistInstances.GenerateScheduled;
 using HotelChecklist.Api.Features.ChecklistInstances.GetById;
 using HotelChecklist.Api.Features.ChecklistInstances.GetEvidenceFile;
+using HotelChecklist.Api.Features.ChecklistInstances.GetMyAssignedTasks;
 using HotelChecklist.Api.Features.ChecklistInstances.GetUpcomingOccurrences;
 using HotelChecklist.Api.Features.ChecklistInstances.List;
 using HotelChecklist.Api.Features.ChecklistInstances.Reopen;
@@ -38,6 +40,10 @@ public static class ChecklistInstancesEndpoints
         services.AddScoped<ICommandHandler<CompleteChecklistTaskCommand, CompleteChecklistTaskResponse>, CompleteChecklistTaskHandler>();
         services.AddScoped<IValidator<CompleteChecklistTaskRequest>, CompleteChecklistTaskRequestValidator>();
 
+        services.AddScoped<ICommandHandler<AssignTaskCommand, AssignTaskResponse>, AssignTaskHandler>();
+
+        services.AddScoped<IQueryHandler<GetMyAssignedTasksQuery, IReadOnlyList<MyAssignedTaskItem>>, GetMyAssignedTasksHandler>();
+
         services.AddScoped<ICommandHandler<UploadEvidenceCommand, UploadEvidenceResponse>, UploadEvidenceHandler>();
 
         services.AddScoped<IQueryHandler<GetEvidenceFileQuery, GetEvidenceFileResponse>, GetEvidenceFileHandler>();
@@ -59,10 +65,12 @@ public static class ChecklistInstancesEndpoints
         group.MapCreateChecklistInstance();
         group.MapGenerateScheduledChecklists();
         group.MapGetUpcomingOccurrences();
+        group.MapGetMyAssignedTasks();
         group.MapGetChecklistInstanceById();
         group.MapListChecklistInstances();
         group.MapStartChecklistInstance();
         group.MapCompleteChecklistTask();
+        group.MapAssignTask();
         group.MapUploadEvidence();
         group.MapGetEvidenceFile();
         group.MapFinishChecklistInstance();

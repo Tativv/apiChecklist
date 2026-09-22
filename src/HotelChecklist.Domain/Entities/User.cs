@@ -21,9 +21,7 @@ public sealed class User : IAuditable
 
     public DateTimeOffset UpdatedAtUtc { get; set; }
 
-    public ICollection<ChecklistInstance> AssignedInstances { get; set; } = [];
-
-    public ICollection<ChecklistInstance> ApprovedInstances { get; set; } = [];
-
     public ICollection<ChecklistTaskEvidence> UploadedEvidences { get; set; } = [];
+
+    public ICollection<UserArea> UserAreas { get; set; } = [];
 }

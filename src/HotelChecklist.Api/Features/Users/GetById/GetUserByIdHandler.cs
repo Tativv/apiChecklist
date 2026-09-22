@@ -9,7 +9,7 @@ public sealed class GetUserByIdHandler(AppDbContext db) : IQueryHandler<GetUserB
 {
     public async Task<Result<GetUserByIdResponse>> Handle(GetUserByIdQuery query, CancellationToken cancellationToken)
     {
-        var user = await db.Users.FindAsync([query.Id], cancellationToken);
+        var user = await db.Users.Include(u => u.UserAreas).FirstOrDefaultAsync(u => u.Id == query.Id, cancellationToken);
 
         if (user is null)
             return Result.Failure<GetUserByIdResponse>(Error.NotFound("Users.NotFound", "Usuario no encontrado."));

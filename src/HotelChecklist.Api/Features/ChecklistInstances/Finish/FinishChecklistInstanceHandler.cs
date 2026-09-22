@@ -21,9 +21,11 @@ public sealed class FinishChecklistInstanceHandler(AppDbContext db) : ICommandHa
             return Result.Failure<FinishChecklistInstanceResponse>(
                 Error.Conflict("ChecklistInstances.InvalidTransition", $"No se puede finalizar un checklist en estado {instance.Status}."));
 
-        if (instance.AssignedUserId != command.ActingUserId && !command.ActingUserIsSupervisorOrAbove)
+        var hasAssignedTask = instance.TaskExecutions.Any(e => e.AssignedUserId == command.ActingUserId);
+
+        if (!command.ActingUserIsSupervisorOrAbove && !hasAssignedTask)
             return Result.Failure<FinishChecklistInstanceResponse>(
-                Error.Forbidden("ChecklistInstances.NotAssigned", "Solo el usuario asignado o un supervisor pueden finalizar este checklist."));
+                Error.Forbidden("ChecklistInstances.NotAssigned", "Solo un colaborador con una tarea asignada acá o un supervisor pueden finalizar este checklist."));
 
         if (instance.TaskExecutions.Any(e => e.Status == TaskExecutionStatus.Pending))
             return Result.Failure<FinishChecklistInstanceResponse>(

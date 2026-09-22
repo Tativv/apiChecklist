@@ -8,5 +8,4 @@ public sealed record ListChecklistInstancesResponseItem(
     Guid AreaId,
     DateOnly Date,
     string Status,
-    Guid? AssignedUserId,
     long? DurationSeconds);

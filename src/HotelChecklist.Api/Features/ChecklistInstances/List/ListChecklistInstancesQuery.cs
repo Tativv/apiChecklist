@@ -8,4 +8,5 @@ public sealed record ListChecklistInstancesQuery(
     Guid? AreaId,
     Guid? AssetId,
     string? Status,
-    Guid? AssignedUserId) : IQuery<IReadOnlyList<ListChecklistInstancesResponseItem>>;
+    Guid ActingUserId,
+    bool RestrictToSupervisedAreas) : IQuery<IReadOnlyList<ListChecklistInstancesResponseItem>>;

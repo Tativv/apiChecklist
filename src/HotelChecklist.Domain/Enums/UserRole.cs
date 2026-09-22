@@ -2,8 +2,8 @@ namespace HotelChecklist.Domain.Enums;
 
 public enum UserRole
 {
-    Admin,
+    Directoria,
     Supervisor,
-    Operator,
-    Manager
+    Colaborador,
+    Gerencia
 }

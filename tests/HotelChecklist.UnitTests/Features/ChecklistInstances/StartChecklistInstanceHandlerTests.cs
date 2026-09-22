@@ -22,25 +22,26 @@ public class StartChecklistInstanceHandlerTests
         AssetId = Guid.NewGuid(),
         Date = DateOnly.FromDateTime(DateTime.UtcNow),
         Status = status,
-        AssignedUserId = assignedUserId
+        TaskExecutions = assignedUserId is null
+            ? []
+            : [new ChecklistTaskExecution { Id = Guid.NewGuid(), TaskId = Guid.NewGuid(), AssignedUserId = assignedUserId }]
     };
 
     [Fact]
-    public async Task Handle_UnassignedPendingInstance_ShouldSelfAssignAndStart()
+    public async Task Handle_ActingUserHasAssignedTask_ShouldStart()
     {
         await using var db = CreateDbContext();
-        var instance = BuildInstance();
+        var actingUserId = Guid.NewGuid();
+        var instance = BuildInstance(assignedUserId: actingUserId);
         db.ChecklistInstances.Add(instance);
         await db.SaveChangesAsync();
 
-        var actingUserId = Guid.NewGuid();
         var handler = new StartChecklistInstanceHandler(db);
 
         var result = await handler.Handle(new StartChecklistInstanceCommand(instance.Id, actingUserId, ActingUserIsSupervisorOrAbove: false), CancellationToken.None);
 
         result.IsSuccess.Should().BeTrue();
         result.Value.Status.Should().Be(nameof(ChecklistStatus.InProgress));
-        result.Value.AssignedUserId.Should().Be(actingUserId);
     }
 
     [Fact]
@@ -60,11 +61,10 @@ public class StartChecklistInstanceHandlerTests
     }
 
     [Fact]
-    public async Task Handle_AssignedToAnotherOperator_ShouldReturnForbidden()
+    public async Task Handle_NoAssignedTaskAndNotSupervisor_ShouldReturnForbidden()
     {
         await using var db = CreateDbContext();
-        var assignedUserId = Guid.NewGuid();
-        var instance = BuildInstance(assignedUserId: assignedUserId);
+        var instance = BuildInstance(assignedUserId: Guid.NewGuid());
         db.ChecklistInstances.Add(instance);
         await db.SaveChangesAsync();
 
@@ -78,11 +78,10 @@ public class StartChecklistInstanceHandlerTests
     }
 
     [Fact]
-    public async Task Handle_AssignedToAnotherOperator_ButActingUserIsSupervisor_ShouldSucceed()
+    public async Task Handle_NoAssignedTaskButActingUserIsSupervisor_ShouldSucceed()
     {
         await using var db = CreateDbContext();
-        var assignedUserId = Guid.NewGuid();
-        var instance = BuildInstance(assignedUserId: assignedUserId);
+        var instance = BuildInstance(assignedUserId: Guid.NewGuid());
         db.ChecklistInstances.Add(instance);
         await db.SaveChangesAsync();
 
@@ -92,6 +91,5 @@ public class StartChecklistInstanceHandlerTests
             new StartChecklistInstanceCommand(instance.Id, Guid.NewGuid(), ActingUserIsSupervisorOrAbove: true), CancellationToken.None);
 
         result.IsSuccess.Should().BeTrue();
-        result.Value.AssignedUserId.Should().Be(assignedUserId);
     }
 }
