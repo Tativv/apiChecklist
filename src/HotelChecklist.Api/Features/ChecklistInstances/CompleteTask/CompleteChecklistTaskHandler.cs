@@ -27,9 +27,9 @@ public sealed class CompleteChecklistTaskHandler(AppDbContext db) : ICommandHand
 
         var isOwnTask = taskExecution.AssignedUserId == command.ActingUserId;
 
-        if (!command.ActingUserIsSupervisorOrAbove && !isOwnTask)
+        if (!command.ActingUserIsManagerOrAbove && !isOwnTask)
             return Result.Failure<CompleteChecklistTaskResponse>(
-                Error.Forbidden("ChecklistTaskExecutions.NotAssigned", "Solo el colaborador asignado o un supervisor pueden completar esta tarea."));
+                Error.Forbidden("ChecklistTaskExecutions.NotAssigned", "Solo el colaborador asignado o gerencia/dirección pueden completar esta tarea."));
 
         taskExecution.Status = command.Completed ? TaskExecutionStatus.Completed : TaskExecutionStatus.Pending;
         taskExecution.ExecutedAtUtc = command.Completed ? DateTimeOffset.UtcNow : null;

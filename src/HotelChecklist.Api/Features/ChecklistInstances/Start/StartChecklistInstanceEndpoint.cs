@@ -15,7 +15,7 @@ public static class StartChecklistInstanceEndpoint
                 ICommandHandler<StartChecklistInstanceCommand, StartChecklistInstanceResponse> handler,
                 CancellationToken cancellationToken) =>
             {
-                var command = new StartChecklistInstanceCommand(id, user.GetUserId(), user.IsSupervisorOrAbove());
+                var command = new StartChecklistInstanceCommand(id, user.GetUserId(), user.IsManagerOrAbove());
                 var result = await handler.Handle(command, cancellationToken);
                 return result.ToHttpResult();
             })

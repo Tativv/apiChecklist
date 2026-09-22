@@ -6,7 +6,7 @@ using Microsoft.EntityFrameworkCore;
 
 namespace HotelChecklist.Api.Features.ChecklistInstances;
 
-public sealed class ChecklistInstanceCreationService(AppDbContext db)
+public sealed class ChecklistInstanceCreationService(AppDbContext db, ScheduleEvaluationService evaluationService)
 {
     public async Task<Result<ChecklistInstance>> CreateAsync(
         Guid templateId,
@@ -16,10 +16,15 @@ public sealed class ChecklistInstanceCreationService(AppDbContext db)
     {
         var template = await db.ChecklistTemplates
             .Include(t => t.Tasks).ThenInclude(t => t.TaskSchedules).ThenInclude(ts => ts.Schedule)
+            .Include(t => t.TemplateSchedules).ThenInclude(ts => ts.Schedule)
             .FirstOrDefaultAsync(t => t.Id == templateId, cancellationToken);
 
         if (template is null)
             return Result.Failure<ChecklistInstance>(Error.NotFound("ChecklistTemplates.NotFound", "Template no encontrado."));
+
+        if (!evaluationService.ShouldExecuteTemplate(template, date))
+            return Result.Failure<ChecklistInstance>(
+                Error.Validation("ChecklistInstances.FrequencyMismatch", "La fecha seleccionada no coincide con la programación del template."));
 
         var assetExists = await db.Assets.AnyAsync(a => a.Id == assetId, cancellationToken);
 

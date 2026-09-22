@@ -16,6 +16,10 @@ public static class ClaimsPrincipalExtensions
         || principal.IsInRole(UserRole.Gerencia.ToString())
         || principal.IsInRole(UserRole.Supervisor.ToString());
 
+    public static bool IsManagerOrAbove(this ClaimsPrincipal principal) =>
+        principal.IsInRole(UserRole.Directoria.ToString())
+        || principal.IsInRole(UserRole.Gerencia.ToString());
+
     public static bool IsExactlySupervisor(this ClaimsPrincipal principal) =>
         principal.IsInRole(UserRole.Supervisor.ToString())
         && !principal.IsInRole(UserRole.Directoria.ToString())

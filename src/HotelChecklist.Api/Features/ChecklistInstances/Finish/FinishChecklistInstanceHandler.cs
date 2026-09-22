@@ -23,9 +23,9 @@ public sealed class FinishChecklistInstanceHandler(AppDbContext db) : ICommandHa
 
         var hasAssignedTask = instance.TaskExecutions.Any(e => e.AssignedUserId == command.ActingUserId);
 
-        if (!command.ActingUserIsSupervisorOrAbove && !hasAssignedTask)
+        if (!command.ActingUserIsManagerOrAbove && !hasAssignedTask)
             return Result.Failure<FinishChecklistInstanceResponse>(
-                Error.Forbidden("ChecklistInstances.NotAssigned", "Solo un colaborador con una tarea asignada acá o un supervisor pueden finalizar este checklist."));
+                Error.Forbidden("ChecklistInstances.NotAssigned", "Solo un colaborador con una tarea asignada acá o gerencia/dirección pueden finalizar este checklist."));
 
         if (instance.TaskExecutions.Any(e => e.Status == TaskExecutionStatus.Pending))
             return Result.Failure<FinishChecklistInstanceResponse>(

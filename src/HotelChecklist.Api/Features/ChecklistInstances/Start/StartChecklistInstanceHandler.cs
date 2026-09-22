@@ -21,11 +21,17 @@ public sealed class StartChecklistInstanceHandler(AppDbContext db) : ICommandHan
             return Result.Failure<StartChecklistInstanceResponse>(
                 Error.Conflict("ChecklistInstances.InvalidTransition", $"No se puede iniciar un checklist en estado {instance.Status}."));
 
+        var allTasksAssigned = instance.TaskExecutions.All(e => e.AssignedUserId is not null);
+
+        if (!allTasksAssigned)
+            return Result.Failure<StartChecklistInstanceResponse>(
+                Error.Validation("ChecklistInstances.TasksNotAssigned", "Todas las tareas deben tener un responsable asignado antes de iniciar."));
+
         var hasAssignedTask = instance.TaskExecutions.Any(e => e.AssignedUserId == command.ActingUserId);
 
-        if (!command.ActingUserIsSupervisorOrAbove && !hasAssignedTask)
+        if (!command.ActingUserIsManagerOrAbove && !hasAssignedTask)
             return Result.Failure<StartChecklistInstanceResponse>(
-                Error.Forbidden("ChecklistInstances.NotAssigned", "Solo un colaborador con una tarea asignada acá o un supervisor pueden iniciar este checklist."));
+                Error.Forbidden("ChecklistInstances.NotAssigned", "Solo un colaborador con una tarea asignada acá o gerencia/dirección pueden iniciar este checklist."));
 
         instance.Status = ChecklistStatus.InProgress;
         instance.StartedAt = DateTimeOffset.UtcNow;

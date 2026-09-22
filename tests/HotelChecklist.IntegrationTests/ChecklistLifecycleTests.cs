@@ -21,6 +21,7 @@ public class ChecklistLifecycleTests : IClassFixture<CustomWebApplicationFactory
 {
     private readonly CustomWebApplicationFactory _factory;
     private HttpClient _client = null!;
+    private Guid _gerenciaUserId;
 
     public ChecklistLifecycleTests(CustomWebApplicationFactory factory)
     {
@@ -37,6 +38,7 @@ public class ChecklistLifecycleTests : IClassFixture<CustomWebApplicationFactory
 
         var login = await loginResponse.Content.ReadFromJsonAsync<LoginResponse>();
         _client.DefaultRequestHeaders.Authorization = new AuthenticationHeaderValue("Bearer", login!.Token);
+        _gerenciaUserId = login!.UserId;
     }
 
     public async Task DisposeAsync() => await _factory.DisposeAsync();
@@ -79,6 +81,16 @@ public class ChecklistLifecycleTests : IClassFixture<CustomWebApplicationFactory
         createInstanceResponse.StatusCode.Should().Be(HttpStatusCode.Created);
         var createdInstance = await createInstanceResponse.Content.ReadFromJsonAsync<CreateChecklistInstanceResponse>();
         var instanceId = createdInstance!.Id;
+
+        var pendingDetail = await _client.GetFromJsonAsync<GetChecklistInstanceByIdResponse>($"/api/checklist-instances/{instanceId}");
+
+        foreach (var taskExecution in pendingDetail!.TaskExecutions)
+        {
+            var assignResponse = await _client.PostAsJsonAsync(
+                $"/api/checklist-instances/{instanceId}/tasks/{taskExecution.Id}/assign",
+                new { UserId = _gerenciaUserId });
+            assignResponse.StatusCode.Should().Be(HttpStatusCode.OK);
+        }
 
         var startResponse = await _client.PostAsync($"/api/checklist-instances/{instanceId}/start", null);
         startResponse.StatusCode.Should().Be(HttpStatusCode.OK);

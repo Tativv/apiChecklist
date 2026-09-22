@@ -8,4 +8,4 @@ public sealed record CompleteChecklistTaskCommand(
     bool Completed,
     string? Comment,
     Guid ActingUserId,
-    bool ActingUserIsSupervisorOrAbove) : ICommand<CompleteChecklistTaskResponse>;
+    bool ActingUserIsManagerOrAbove) : ICommand<CompleteChecklistTaskResponse>;

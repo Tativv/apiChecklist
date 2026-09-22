@@ -38,7 +38,7 @@ public class StartChecklistInstanceHandlerTests
 
         var handler = new StartChecklistInstanceHandler(db);
 
-        var result = await handler.Handle(new StartChecklistInstanceCommand(instance.Id, actingUserId, ActingUserIsSupervisorOrAbove: false), CancellationToken.None);
+        var result = await handler.Handle(new StartChecklistInstanceCommand(instance.Id, actingUserId, ActingUserIsManagerOrAbove: false), CancellationToken.None);
 
         result.IsSuccess.Should().BeTrue();
         result.Value.Status.Should().Be(nameof(ChecklistStatus.InProgress));
@@ -61,7 +61,7 @@ public class StartChecklistInstanceHandlerTests
     }
 
     [Fact]
-    public async Task Handle_NoAssignedTaskAndNotSupervisor_ShouldReturnForbidden()
+    public async Task Handle_NoAssignedTaskAndNotManager_ShouldReturnForbidden()
     {
         await using var db = CreateDbContext();
         var instance = BuildInstance(assignedUserId: Guid.NewGuid());
@@ -71,14 +71,14 @@ public class StartChecklistInstanceHandlerTests
         var handler = new StartChecklistInstanceHandler(db);
 
         var result = await handler.Handle(
-            new StartChecklistInstanceCommand(instance.Id, Guid.NewGuid(), ActingUserIsSupervisorOrAbove: false), CancellationToken.None);
+            new StartChecklistInstanceCommand(instance.Id, Guid.NewGuid(), ActingUserIsManagerOrAbove: false), CancellationToken.None);
 
         result.IsFailure.Should().BeTrue();
         result.Error.Type.Should().Be(ErrorType.Forbidden);
     }
 
     [Fact]
-    public async Task Handle_NoAssignedTaskButActingUserIsSupervisor_ShouldSucceed()
+    public async Task Handle_NoAssignedTaskButActingUserIsManager_ShouldSucceed()
     {
         await using var db = CreateDbContext();
         var instance = BuildInstance(assignedUserId: Guid.NewGuid());
@@ -88,8 +88,38 @@ public class StartChecklistInstanceHandlerTests
         var handler = new StartChecklistInstanceHandler(db);
 
         var result = await handler.Handle(
-            new StartChecklistInstanceCommand(instance.Id, Guid.NewGuid(), ActingUserIsSupervisorOrAbove: true), CancellationToken.None);
+            new StartChecklistInstanceCommand(instance.Id, Guid.NewGuid(), ActingUserIsManagerOrAbove: true), CancellationToken.None);
 
         result.IsSuccess.Should().BeTrue();
+    }
+
+    [Fact]
+    public async Task Handle_NotAllTasksAssigned_ShouldReturnValidationError_EvenForManager()
+    {
+        await using var db = CreateDbContext();
+        var actingUserId = Guid.NewGuid();
+        var instance = new ChecklistInstance
+        {
+            Id = Guid.NewGuid(),
+            TemplateId = Guid.NewGuid(),
+            AssetId = Guid.NewGuid(),
+            Date = DateOnly.FromDateTime(DateTime.UtcNow),
+            Status = ChecklistStatus.Pending,
+            TaskExecutions =
+            [
+                new ChecklistTaskExecution { Id = Guid.NewGuid(), TaskId = Guid.NewGuid(), AssignedUserId = actingUserId },
+                new ChecklistTaskExecution { Id = Guid.NewGuid(), TaskId = Guid.NewGuid(), AssignedUserId = null }
+            ]
+        };
+        db.ChecklistInstances.Add(instance);
+        await db.SaveChangesAsync();
+
+        var handler = new StartChecklistInstanceHandler(db);
+
+        var result = await handler.Handle(
+            new StartChecklistInstanceCommand(instance.Id, actingUserId, ActingUserIsManagerOrAbove: true), CancellationToken.None);
+
+        result.IsFailure.Should().BeTrue();
+        result.Error.Type.Should().Be(ErrorType.Validation);
     }
 }
