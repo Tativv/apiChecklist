@@ -25,9 +25,19 @@ public sealed class UpdateUserHandler(AppDbContext db) : ICommandHandler<UpdateU
         user.Name = command.Name;
         user.Role = Enum.Parse<UserRole>(command.Role, ignoreCase: true);
 
-        user.UserAreas.Clear();
-        foreach (var areaId in areaIds)
-            user.UserAreas.Add(new UserArea { Id = Guid.NewGuid(), AreaId = areaId });
+        var currentAreaIds = user.UserAreas.Select(ua => ua.AreaId).ToHashSet();
+        var requestedSet = areaIds.ToHashSet();
+
+        var toRemove = user.UserAreas.Where(ua => !requestedSet.Contains(ua.AreaId)).ToList();
+        var toAdd = areaIds.Where(id => !currentAreaIds.Contains(id)).ToList();
+
+        db.UserAreas.RemoveRange(toRemove);
+        db.UserAreas.AddRange(toAdd.Select(areaId => new UserArea
+        {
+            Id = Guid.NewGuid(),
+            UserId = user.Id,
+            AreaId = areaId
+        }));
 
         await db.SaveChangesAsync(cancellationToken);
 
