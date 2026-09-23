@@ -60,7 +60,7 @@ public class FinishChecklistInstanceHandlerTests
 
         var handler = new FinishChecklistInstanceHandler(db);
 
-        var result = await handler.Handle(new FinishChecklistInstanceCommand(instance.Id, userId, ActingUserIsManagerOrAbove: false), CancellationToken.None);
+        var result = await handler.Handle(new FinishChecklistInstanceCommand(instance.Id, userId, ActingUserIsSupervisorOrAbove: false), CancellationToken.None);
 
         result.IsSuccess.Should().BeTrue();
         result.Value.Status.Should().Be(nameof(ChecklistStatus.Completed));
@@ -78,14 +78,14 @@ public class FinishChecklistInstanceHandlerTests
 
         var handler = new FinishChecklistInstanceHandler(db);
 
-        var result = await handler.Handle(new FinishChecklistInstanceCommand(instance.Id, userId, ActingUserIsManagerOrAbove: false), CancellationToken.None);
+        var result = await handler.Handle(new FinishChecklistInstanceCommand(instance.Id, userId, ActingUserIsSupervisorOrAbove: false), CancellationToken.None);
 
         result.IsFailure.Should().BeTrue();
         result.Error.Type.Should().Be(ErrorType.Validation);
     }
 
     [Fact]
-    public async Task Handle_ByUnassignedNonManagerUser_ShouldReturnForbidden()
+    public async Task Handle_ByUnassignedNonSupervisorUser_ShouldReturnForbidden()
     {
         await using var db = CreateDbContext();
         var assignedUserId = Guid.NewGuid();
@@ -96,7 +96,7 @@ public class FinishChecklistInstanceHandlerTests
         var handler = new FinishChecklistInstanceHandler(db);
 
         var result = await handler.Handle(
-            new FinishChecklistInstanceCommand(instance.Id, Guid.NewGuid(), ActingUserIsManagerOrAbove: false), CancellationToken.None);
+            new FinishChecklistInstanceCommand(instance.Id, Guid.NewGuid(), ActingUserIsSupervisorOrAbove: false), CancellationToken.None);
 
         result.IsFailure.Should().BeTrue();
         result.Error.Type.Should().Be(ErrorType.Forbidden);

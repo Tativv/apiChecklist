@@ -25,14 +25,45 @@ Cada `ChecklistTaskExecution` lleva 4 relaciones independientes con `User`:
   bloque todas sus tareas `Completed`; al reabrir la instancia, se limpian ambos campos en cada
   tarea).
 
-Los roles (`UserRole`) son, en orden jerárquico: `Directoria, Supervisor, Colaborador, Gerencia`
-— Directoria y Gerencia tienen los mismos permisos que "Supervisor o superior" en todo el dominio
-de checklists; la jerarquía de negocio real es Gerencia > Directoria > Supervisor > Colaborador,
-pero a nivel de autorización sólo importa la distinción "Supervisor o superior" vs. "Colaborador".
+Los roles (`UserRole`) forman una jerarquía estrictamente aditiva, de menor a mayor:
+`Colaborador ⊂ Supervisor ⊂ Gerencia ⊂ Directoria` — cada rol puede hacer todo lo que puede el
+anterior, más lo suyo:
+
+- **Colaborador**: completa sus propias tareas asignadas (`CompleteTask`); inicia/finaliza una
+  instancia si tiene al menos una tarea asignada ahí.
+- **Supervisor** (hereda lo de Colaborador, sin restringirse a "lo suyo"): asigna responsables
+  por tarea (`AssignTask`, sólo dentro de las áreas que cubre vía `UserArea`), revisa checklists
+  terminados (`Approve`), puede iniciar/finalizar/completar/reabrir **cualquier** instancia — no
+  sólo la que tiene asignada. Lo único que un Supervisor **no** puede hacer es crear/eliminar
+  templates o instancias.
+- **Gerencia** (hereda todo lo de Supervisor): crea/edita/elimina `ChecklistTemplate`, configura
+  sus assets, crea instancias manuales, dispara la generación programada
+  (`GenerateScheduledChecklists`), elimina instancias.
+- **Directoria** (hereda todo lo de Gerencia): administra usuarios (crear/editar/desactivar).
+
+`Policies.SupervisorOrAbove` = Supervisor/Gerencia/Directoria; `Policies.ManagerOrAbove` =
+Gerencia/Directoria — ambas listas de roles son subconjunto una de la otra, reflejando la
+jerarquía aditiva de arriba.
+
 Un `User` cubre cero o más `Area` a través de `UserArea` (many-to-many) — típicamente un
 Supervisor cubre una o varias áreas, y ese vínculo es lo que acota qué instancias puede
 listar/asignar (`ListChecklistInstancesHandler`, `AssignTaskHandler`) cuando el rol es
 **exactamente** Supervisor (Gerencia/Directoria ven y asignan sin restricción de área).
+
+## Estados de `ChecklistInstance`
+
+El flujo tiene 5 estados, con dos transiciones automáticas (no accionadas por un botón):
+
+1. **`Pending`** — recién creada (manual o por generación programada), sin responsables.
+2. **`Approved`** *(automático)* — en cuanto la **última** `ChecklistTaskExecution` sin asignar
+   recibe un responsable, la instancia pasa sola a `Approved` (`AssignTaskHandler`). Si luego se
+   desasigna cualquier tarea mientras está en `Pending`/`Approved`, vuelve a `Pending` sola.
+   Reasignar una tarea en una instancia ya `InProgress`/`Completed`/`Reviewed` no toca el status.
+3. **`InProgress`** — al iniciar (`Start`), sólo permitido desde `Approved`.
+4. **`Completed`** — al finalizar (`Finish`), exige que todas las tareas estén `Completed`.
+5. **`Reviewed`** — revisión final de un Supervisor+ (`Approve`, deja `approved_by_user_id`/
+   `approved_at` en cada `ChecklistTaskExecution` `Completed`). `Reopen` regresa desde
+   `Completed`/`Reviewed` a `InProgress`, limpiando esos dos campos.
 
 ## Diagrama
 
@@ -149,7 +180,7 @@ erDiagram
         uuid template_id FK
         uuid asset_id FK
         date date
-        enum status "Pending | InProgress | Completed | Approved"
+        enum status "Pending | Approved | InProgress | Completed | Reviewed"
         timestamptz started_at
         timestamptz completed_at
         long duration_seconds
@@ -196,6 +227,16 @@ erDiagram
 - **`UserArea` acota qué puede ver/asignar un Supervisor exacto**: Gerencia y Directoria operan
   sin restricción de área; un usuario con rol exactamente `Supervisor` sólo ve (`List`) y asigna
   (`AssignTask`) instancias cuyo template pertenece a una de sus áreas en `UserArea`.
+- **Crear/eliminar templates e instancias es exclusivo de Gerencia/Directoria**
+  (`Policies.ManagerOrAbove`): `CreateChecklistTemplate`, `UpdateChecklistTemplate`,
+  `DeleteChecklistTemplate`, `ConfigureTemplateAssets`, `CreateChecklistInstance`,
+  `GenerateScheduledChecklists`, `DeleteChecklistInstance` y `ReopenChecklistInstance`. Un
+  Supervisor puede ver, asignar, revisar e iniciar/finalizar cualquier instancia, pero no crear ni
+  destruir templates o instancias — eso queda fuera de "lo que hereda" de Colaborador+Supervisor.
+- **`CreateChecklistInstance` valida frecuencia** igual que la generación programada
+  (`ScheduleEvaluationService.ShouldExecuteTemplate`): no se puede crear una instancia manual para
+  una fecha que no coincide con la programación del template (p. ej. un template semanal de lunes
+  no admite crear una instancia para un martes).
 - **Propiedad exclusiva de `Schedule`**: no hay tabla intermedia adicional ni reuso entre
   templates/tareas. Editar el set de horarios de un template o tarea borra y recrea sus filas de
   `Schedule` (mismo patrón "reemplazar el set completo" que ya usa

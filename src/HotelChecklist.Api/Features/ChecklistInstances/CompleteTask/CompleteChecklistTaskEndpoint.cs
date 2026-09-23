@@ -19,7 +19,7 @@ public static class CompleteChecklistTaskEndpoint
                 CancellationToken cancellationToken) =>
             {
                 var result = await handler.Handle(
-                    request.ToCommand(instanceId, taskExecutionId, user.GetUserId(), user.IsManagerOrAbove()), cancellationToken);
+                    request.ToCommand(instanceId, taskExecutionId, user.GetUserId(), user.IsSupervisorOrAbove()), cancellationToken);
                 return result.ToHttpResult();
             })
             .AddEndpointFilter<ValidationFilter<CompleteChecklistTaskRequest>>()

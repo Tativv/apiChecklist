@@ -92,6 +92,9 @@ public class ChecklistLifecycleTests : IClassFixture<CustomWebApplicationFactory
             assignResponse.StatusCode.Should().Be(HttpStatusCode.OK);
         }
 
+        var approvedDetail = await _client.GetFromJsonAsync<GetChecklistInstanceByIdResponse>($"/api/checklist-instances/{instanceId}");
+        approvedDetail!.Status.Should().Be("Approved");
+
         var startResponse = await _client.PostAsync($"/api/checklist-instances/{instanceId}/start", null);
         startResponse.StatusCode.Should().Be(HttpStatusCode.OK);
         var started = await startResponse.Content.ReadFromJsonAsync<StartChecklistInstanceResponse>();
@@ -116,6 +119,6 @@ public class ChecklistLifecycleTests : IClassFixture<CustomWebApplicationFactory
         var approveResponse = await _client.PostAsync($"/api/checklist-instances/{instanceId}/approve", null);
         approveResponse.StatusCode.Should().Be(HttpStatusCode.OK);
         var approved = await approveResponse.Content.ReadFromJsonAsync<ApproveChecklistInstanceResponse>();
-        approved!.Status.Should().Be("Approved");
+        approved!.Status.Should().Be("Reviewed");
     }
 }

@@ -18,7 +18,7 @@ public static class CreateChecklistTemplateEndpoint
                 return result.ToHttpResult(StatusCodes.Status201Created);
             })
             .AddEndpointFilter<ValidationFilter<CreateChecklistTemplateRequest>>()
-            .RequireAuthorization(Policies.SupervisorOrAbove)
+            .RequireAuthorization(Policies.ManagerOrAbove)
             .WithName("CreateChecklistTemplate")
             .Produces<CreateChecklistTemplateResponse>(StatusCodes.Status201Created)
             .ProducesValidationProblem()

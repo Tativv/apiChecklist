@@ -18,7 +18,7 @@ public sealed class ReopenChecklistInstanceHandler(AppDbContext db, ILogger<Reop
         if (instance is null)
             return Result.Failure<ReopenChecklistInstanceResponse>(Error.NotFound("ChecklistInstances.NotFound", "Checklist no encontrado."));
 
-        if (instance.Status is not (ChecklistStatus.Completed or ChecklistStatus.Approved))
+        if (instance.Status is not (ChecklistStatus.Completed or ChecklistStatus.Reviewed))
             return Result.Failure<ReopenChecklistInstanceResponse>(
                 Error.Conflict("ChecklistInstances.InvalidTransition", $"No se puede reabrir un checklist en estado {instance.Status}."));
 

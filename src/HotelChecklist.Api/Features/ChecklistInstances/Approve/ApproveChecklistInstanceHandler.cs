@@ -23,7 +23,7 @@ public sealed class ApproveChecklistInstanceHandler(AppDbContext db) : ICommandH
 
         var approvedAt = DateTimeOffset.UtcNow;
 
-        instance.Status = ChecklistStatus.Approved;
+        instance.Status = ChecklistStatus.Reviewed;
 
         foreach (var execution in instance.TaskExecutions.Where(e => e.Status == TaskExecutionStatus.Completed))
         {

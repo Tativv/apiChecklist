@@ -19,7 +19,7 @@ public static class ReopenChecklistInstanceEndpoint
                 return result.ToHttpResult();
             })
             .AddEndpointFilter<ValidationFilter<ReopenChecklistInstanceRequest>>()
-            .RequireAuthorization(Policies.ManagerOrAbove)
+            .RequireAuthorization(Policies.SupervisorOrAbove)
             .WithName("ReopenChecklistInstance")
             .Produces<ReopenChecklistInstanceResponse>()
             .ProducesValidationProblem()
