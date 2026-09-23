@@ -10,7 +10,10 @@ public sealed class DashboardHandler(AppDbContext db) : IQueryHandler<DashboardQ
 {
     public async Task<Result<DashboardResponse>> Handle(DashboardQuery query, CancellationToken cancellationToken)
     {
-        var today = DateOnly.FromDateTime(DateTime.UtcNow);
+        // "Vencido" compara contra el día del cliente, no el del servidor: en un huso horario
+        // detrás de UTC (Brasil/Uruguay), DateTime.UtcNow puede seguir en el día anterior al
+        // del cliente, contando de menos (o de más, cerca de medianoche) instancias vencidas.
+        var today = query.Today ?? DateOnly.FromDateTime(DateTime.UtcNow);
 
         var instancesQuery = db.ChecklistInstances.AsQueryable();
 

@@ -11,10 +11,11 @@ public static class DashboardEndpoint
         group.MapGet("/dashboard", async (
                 DateOnly? fromDate,
                 DateOnly? toDate,
+                DateOnly? today,
                 IQueryHandler<DashboardQuery, DashboardResponse> handler,
                 CancellationToken cancellationToken) =>
             {
-                var result = await handler.Handle(new DashboardQuery(fromDate, toDate), cancellationToken);
+                var result = await handler.Handle(new DashboardQuery(fromDate, toDate, today), cancellationToken);
                 return result.ToHttpResult();
             })
             .RequireAuthorization(Policies.SupervisorOrAbove)
