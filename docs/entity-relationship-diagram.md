@@ -100,6 +100,10 @@ erDiagram
 
     CHECKLIST_TASK_EVIDENCE }o--|| USER : "subido por"
 
+    AREA ||--o{ CALL : "destino de"
+    CALL }o--|| USER : "abierto por"
+    CALL }o--o| USER : "asignado a"
+
     AREA {
         uuid id PK
         string name
@@ -215,10 +219,47 @@ erDiagram
         timestamptz uploaded_at
         uuid uploaded_by_user_id FK
     }
+
+    CALL {
+        uuid id PK
+        uuid created_by_user_id FK
+        uuid area_id FK "área destino"
+        string subject
+        string description "nullable"
+        enum priority "Baixa | Media | Alta"
+        enum status "Open | InProgress | Finished"
+        uuid assigned_user_id FK "nullable"
+        timestamptz started_at "nullable"
+        timestamptz completed_at "nullable"
+        long duration_seconds "nullable"
+    }
 ```
 
 ## Notas de diseño
 
+- **`Call` (chamados) es un flujo independiente de los checklists**, con su propio ciclo de vida
+  de 3 estados: `Open → InProgress → Finished` (sin reabrir, sin editar ni borrar después de
+  creado — se puede agregar si hace falta). Solo Supervisor+ puede abrir uno (`CreateCall`).
+  Visibilidad de `List`:
+  - Gerência/Diretoria: ven todos los chamados, sin restricción.
+  - Supervisor (rol exacto): ve todos los chamados de sus áreas (`UserArea`), asignados o no.
+  - Colaborador (rol exacto): ve los chamados asignados a él, más los **sin asignar** de sus
+    áreas — en cuanto un chamado se asigna a alguien, deja de aparecer para el resto de los
+    colaboradores de esa área (solo lo sigue viendo el asignado y Supervisor+). Esto es lo que
+    hace que `UserArea` en un `Colaborador` (habilitado para cualquier rol, no solo Supervisor)
+    tenga ahora un efecto funcional real.
+  - `AssignCall` refleja la misma asimetría: un colaborador solo puede auto-asignarse un chamado
+    sin asignar de un área que cubre (`Calls.CannotAssignOthers` si intenta asignar a otro,
+    `Calls.AlreadyAssigned` si ya tiene dueño); Supervisor exacto debe cubrir el área del chamado
+    pero puede asignarlo a cualquier usuario activo; Gerência/Diretoria no tienen restricción.
+  - `Start`/`Finish` siguen el mismo criterio que `ChecklistInstance`: el usuario asignado o
+    Supervisor+.
+  - `Priority` (`Baixa`/`Media`/`Alta`) se persiste como string (`HasConversion<string>()`) por
+    legibilidad en la base, así que `List` NO puede ordenar con `OrderByDescending(c => c.Priority)`
+    directo — eso ordena alfabéticamente la columna ("Alta" < "Baixa" < "Media"), no por urgencia.
+    Se ordena con una expresión `Alta→2 | Media→1 | Baixa→0` que EF traduce a un `CASE` en SQL,
+    y como desempate `ThenBy(CreatedAtUtc)` (más antiguo primero, FIFO dentro de la misma
+    prioridad).
 - **`ChecklistTemplate` versiona por copy-on-write en vez de mutar con historial**: `Update`
   separa los campos por si tocan o no `ChecklistTask`/`ChecklistTaskExecution` (FK `Restrict`):
   - **Nombre/descripción/área/duración/horarios del template**: nunca tocan `ChecklistTask`, así

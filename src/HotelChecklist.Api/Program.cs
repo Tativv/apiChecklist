@@ -7,6 +7,7 @@ using HotelChecklist.Api.Common.Persistence.Seed;
 using HotelChecklist.Api.Features.Areas;
 using HotelChecklist.Api.Features.Assets;
 using HotelChecklist.Api.Features.Auth;
+using HotelChecklist.Api.Features.Calls;
 using HotelChecklist.Api.Features.ChecklistInstances;
 using HotelChecklist.Api.Features.ChecklistTemplates;
 using HotelChecklist.Api.Features.Reports;
@@ -109,7 +110,8 @@ builder.Services
     .AddAssetsFeature()
     .AddChecklistTemplatesFeature()
     .AddChecklistInstancesFeature()
-    .AddReportsFeature();
+    .AddReportsFeature()
+    .AddCallsFeature();
 
 var app = builder.Build();
 
@@ -135,6 +137,7 @@ app.MapAssetsEndpoints();
 app.MapChecklistTemplatesEndpoints();
 app.MapChecklistInstancesEndpoints();
 app.MapReportsEndpoints();
+app.MapCallsEndpoints();
 
 if (app.Environment.IsDevelopment() || app.Configuration.GetValue<bool>("SeedOnStartup"))
 {

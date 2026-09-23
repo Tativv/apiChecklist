@@ -24,4 +24,10 @@ public static class ClaimsPrincipalExtensions
         principal.IsInRole(UserRole.Supervisor.ToString())
         && !principal.IsInRole(UserRole.Directoria.ToString())
         && !principal.IsInRole(UserRole.Gerencia.ToString());
+
+    public static bool IsExactlyColaborador(this ClaimsPrincipal principal) =>
+        principal.IsInRole(UserRole.Colaborador.ToString())
+        && !principal.IsInRole(UserRole.Supervisor.ToString())
+        && !principal.IsInRole(UserRole.Directoria.ToString())
+        && !principal.IsInRole(UserRole.Gerencia.ToString());
 }
