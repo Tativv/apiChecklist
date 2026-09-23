@@ -11,6 +11,7 @@ public static class UpdateChecklistTemplateMapping
             request.Description,
             request.AreaId,
             request.EstimatedDurationMinutes,
+            request.ExecutionMode,
             request.Schedules,
             request.Tasks);
 
@@ -20,6 +21,7 @@ public static class UpdateChecklistTemplateMapping
         template.Description,
         template.AreaId,
         template.EstimatedDurationMinutes,
+        template.ExecutionMode.ToString(),
         template.TemplateSchedules.OrderBy(ts => ts.Schedule.ExecutionOrder).Select(ts => ts.Schedule.ToResponseItem()).ToList(),
         template.Tasks.OrderBy(t => t.Order).Select(t => t.ToResponseItem()).ToList(),
         versionedAsNewTemplate);

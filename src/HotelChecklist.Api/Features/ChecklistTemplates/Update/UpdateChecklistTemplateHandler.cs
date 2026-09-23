@@ -2,6 +2,7 @@ using HotelChecklist.Api.Common.Cqrs;
 using HotelChecklist.Api.Common.Persistence;
 using HotelChecklist.Domain.Common;
 using HotelChecklist.Domain.Entities;
+using HotelChecklist.Domain.Enums;
 using Microsoft.EntityFrameworkCore;
 
 namespace HotelChecklist.Api.Features.ChecklistTemplates.Update;
@@ -41,6 +42,7 @@ public sealed class UpdateChecklistTemplateHandler(AppDbContext db) : ICommandHa
             template.Description = command.Description;
             template.AreaId = command.AreaId;
             template.EstimatedDurationMinutes = command.EstimatedDurationMinutes;
+            template.ExecutionMode = Enum.Parse<TaskExecutionMode>(command.ExecutionMode, ignoreCase: true);
 
             db.TemplateSchedules.RemoveRange(template.TemplateSchedules);
             var newTemplateSchedules = command.Schedules
@@ -80,6 +82,7 @@ public sealed class UpdateChecklistTemplateHandler(AppDbContext db) : ICommandHa
             template.Description = command.Description;
             template.AreaId = command.AreaId;
             template.EstimatedDurationMinutes = command.EstimatedDurationMinutes;
+            template.ExecutionMode = Enum.Parse<TaskExecutionMode>(command.ExecutionMode, ignoreCase: true);
 
             // Reemplazo vía RemoveRange/AddRange sobre el DbSet en vez de Clear()+Add() sobre la
             // navegación: Clear() en una colección ya trackeada con hijos anidados (TaskSchedules)
@@ -128,6 +131,7 @@ public sealed class UpdateChecklistTemplateHandler(AppDbContext db) : ICommandHa
             Description = command.Description,
             AreaId = command.AreaId,
             EstimatedDurationMinutes = command.EstimatedDurationMinutes,
+            ExecutionMode = Enum.Parse<TaskExecutionMode>(command.ExecutionMode, ignoreCase: true),
             TemplateSchedules = command.Schedules
                 .Select(s => new TemplateSchedule { Id = Guid.NewGuid(), Schedule = s.ToSchedule() })
                 .ToList(),

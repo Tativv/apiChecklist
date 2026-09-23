@@ -135,6 +135,7 @@ erDiagram
         string description
         uuid area_id FK
         int estimated_duration_minutes
+        string execution_mode "Scheduled u Continuous — igual que ChecklistTask"
     }
 
     CHECKLIST_TASK {
@@ -238,6 +239,13 @@ erDiagram
   viva del mismo `group_id`. `Delete` sobre un template con instancias propias "retira"
   (`is_snapshot = true`, sin sucesor) en vez de bloquear o borrar — deja de listarse/generar pero
   el histórico permanece íntegro.
+- **`ChecklistTemplate.ExecutionMode` espeja `ChecklistTask.ExecutionMode`**: un template
+  `Continuous` mantiene sus `TemplateSchedules` (la frecuencia — diaria/semanal/mensual — sigue
+  determinando en qué días se genera el checklist), pero el frontend oculta el selector de hora
+  porque no aplica: el checklist queda disponible durante todo el turno en vez de a una hora fija.
+  `TimeOfDay` nunca participa de `ShouldExecute` (sólo gatilla generación por fecha), así que no
+  hace falta relajar nada a nivel de dominio — es puramente un cambio de qué controles muestra el
+  formulario según el modo elegido.
 - **`ChecklistInstance` no conoce usuarios**: nunca tuvo (ni tiene) un "responsable" único; la
   asignación siempre fue, es y será a nivel de `ChecklistTaskExecution`. `Start`/`Finish` de una
   instancia están permitidos para Supervisor+ o para cualquier colaborador que tenga al menos una

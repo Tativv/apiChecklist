@@ -5,5 +5,6 @@ public sealed record UpdateChecklistTemplateRequest(
     string? Description,
     Guid AreaId,
     int EstimatedDurationMinutes,
+    string ExecutionMode,
     List<ScheduleInput> Schedules,
     List<ChecklistTaskRequest> Tasks);

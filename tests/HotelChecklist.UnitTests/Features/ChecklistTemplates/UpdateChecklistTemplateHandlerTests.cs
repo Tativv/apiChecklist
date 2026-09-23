@@ -48,6 +48,7 @@ public class UpdateChecklistTemplateHandlerTests
         "desc",
         areaId,
         20,
+        "Scheduled",
         [DailySchedule],
         [new ChecklistTaskRequest(taskName, null, 1, "Continuous", [])]);
 

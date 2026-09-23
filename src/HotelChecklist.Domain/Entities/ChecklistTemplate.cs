@@ -1,4 +1,5 @@
 using HotelChecklist.Domain.Common;
+using HotelChecklist.Domain.Enums;
 
 namespace HotelChecklist.Domain.Entities;
 
@@ -11,6 +12,8 @@ public sealed class ChecklistTemplate : IAuditable
     public bool IsSnapshot { get; set; }
 
     public string Name { get; set; } = string.Empty;
+
+    public TaskExecutionMode ExecutionMode { get; set; } = TaskExecutionMode.Scheduled;
 
     public string? Description { get; set; }
 

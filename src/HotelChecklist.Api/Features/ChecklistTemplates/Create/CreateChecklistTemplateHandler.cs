@@ -2,6 +2,7 @@ using HotelChecklist.Api.Common.Cqrs;
 using HotelChecklist.Api.Common.Persistence;
 using HotelChecklist.Domain.Common;
 using HotelChecklist.Domain.Entities;
+using HotelChecklist.Domain.Enums;
 using Microsoft.EntityFrameworkCore;
 
 namespace HotelChecklist.Api.Features.ChecklistTemplates.Create;
@@ -26,6 +27,7 @@ public sealed class CreateChecklistTemplateHandler(AppDbContext db) : ICommandHa
             Description = command.Description,
             AreaId = command.AreaId,
             EstimatedDurationMinutes = command.EstimatedDurationMinutes,
+            ExecutionMode = Enum.Parse<TaskExecutionMode>(command.ExecutionMode, ignoreCase: true),
             TemplateSchedules = command.Schedules
                 .Select(s => new TemplateSchedule { Id = Guid.NewGuid(), Schedule = s.ToSchedule() })
                 .ToList(),

@@ -60,6 +60,7 @@ public class ChecklistLifecycleTests : IClassFixture<CustomWebApplicationFactory
             "Revisión diaria",
             area.Id,
             30,
+            "Scheduled",
             [dailySchedule],
             [
                 new ChecklistTaskRequest("Tender cama", null, 1, "Scheduled", [dailySchedule]),

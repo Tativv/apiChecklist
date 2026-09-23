@@ -8,5 +8,6 @@ public sealed record UpdateChecklistTemplateCommand(
     string? Description,
     Guid AreaId,
     int EstimatedDurationMinutes,
+    string ExecutionMode,
     List<ScheduleInput> Schedules,
     List<ChecklistTaskRequest> Tasks) : ICommand<UpdateChecklistTemplateResponse>;
