@@ -22,19 +22,22 @@ public sealed class DashboardHandler(AppDbContext db) : IQueryHandler<DashboardQ
 
         var total = await instancesQuery.CountAsync(cancellationToken);
         var pending = await instancesQuery.CountAsync(i => i.Status == ChecklistStatus.Pending, cancellationToken);
+        var approved = await instancesQuery.CountAsync(i => i.Status == ChecklistStatus.Approved, cancellationToken);
         var inProgress = await instancesQuery.CountAsync(i => i.Status == ChecklistStatus.InProgress, cancellationToken);
         var completed = await instancesQuery.CountAsync(i => i.Status == ChecklistStatus.Completed, cancellationToken);
-        var approved = await instancesQuery.CountAsync(i => i.Status == ChecklistStatus.Approved, cancellationToken);
+        var reviewed = await instancesQuery.CountAsync(i => i.Status == ChecklistStatus.Reviewed, cancellationToken);
         var overdue = await instancesQuery.CountAsync(
-            i => i.Date < today && (i.Status == ChecklistStatus.Pending || i.Status == ChecklistStatus.InProgress), cancellationToken);
+            i => i.Date < today
+                && (i.Status == ChecklistStatus.Pending || i.Status == ChecklistStatus.Approved || i.Status == ChecklistStatus.InProgress),
+            cancellationToken);
 
         var averageDuration = await instancesQuery
             .Where(i => i.DurationSeconds != null)
             .Select(i => (double?)i.DurationSeconds!.Value)
             .AverageAsync(cancellationToken);
 
-        var completionRate = total == 0 ? 0 : Math.Round((completed + approved) * 100.0 / total, 2);
+        var completionRate = total == 0 ? 0 : Math.Round((completed + reviewed) * 100.0 / total, 2);
 
-        return Result.Success(new DashboardResponse(total, pending, inProgress, completed, approved, overdue, averageDuration, completionRate));
+        return Result.Success(new DashboardResponse(total, pending, approved, inProgress, completed, reviewed, overdue, averageDuration, completionRate));
     }
 }

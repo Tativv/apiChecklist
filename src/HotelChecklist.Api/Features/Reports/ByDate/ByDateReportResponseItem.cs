@@ -4,7 +4,8 @@ public sealed record ByDateReportResponseItem(
     DateOnly Date,
     int Total,
     int Pending,
+    int Approved,
     int InProgress,
     int Completed,
-    int Approved,
+    int Reviewed,
     double? AverageDurationSeconds);
