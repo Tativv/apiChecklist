@@ -129,6 +129,8 @@ erDiagram
 
     CHECKLIST_TEMPLATE {
         uuid id PK
+        uuid group_id "misma familia de versiones"
+        bool is_snapshot "true = congelada/histórica"
         string name
         string description
         uuid area_id FK
@@ -216,6 +218,16 @@ erDiagram
 
 ## Notas de diseño
 
+- **`ChecklistTemplate` versiona por copy-on-write en vez de mutar con historial**: editar un
+  template sin `ChecklistTaskExecution` asociadas sigue mutando la fila en el lugar (mismo `id`).
+  En cuanto tiene al menos una ejecución, `Update` congela la fila actual (`is_snapshot = true`,
+  sin tocarle ni una tarea — evita el cascade delete sobre `ChecklistTaskExecution` que antes
+  bloqueaba la edición por completo) y crea una fila nueva con el mismo `group_id`,
+  `is_snapshot = false` y los `TemplateAsset` copiados. `List`/`GenerateScheduledChecklists`/
+  `GetUpcomingOccurrences` sólo consideran `is_snapshot = false`; `GetById` sobre un `id`
+  congelado resuelve transparentemente a la versión viva del mismo `group_id`. `Delete` sobre un
+  template con instancias propias "retira" (`is_snapshot = true`, sin sucesor) en vez de bloquear
+  o borrar — deja de listarse/generar pero el histórico permanece íntegro.
 - **`ChecklistInstance` no conoce usuarios**: nunca tuvo (ni tiene) un "responsable" único; la
   asignación siempre fue, es y será a nivel de `ChecklistTaskExecution`. `Start`/`Finish` de una
   instancia están permitidos para Supervisor+ o para cualquier colaborador que tenga al menos una

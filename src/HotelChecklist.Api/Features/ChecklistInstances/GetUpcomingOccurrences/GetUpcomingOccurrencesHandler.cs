@@ -20,6 +20,7 @@ public sealed class GetUpcomingOccurrencesHandler(AppDbContext db, ScheduleEvalu
                 Error.Validation("ChecklistInstances.RangeTooLarge", "Date range must not exceed 366 days."));
 
         var templates = await db.ChecklistTemplates
+            .Where(t => !t.IsSnapshot)
             .Include(t => t.TemplateSchedules).ThenInclude(ts => ts.Schedule)
             .Include(t => t.TemplateAssets).ThenInclude(ta => ta.Asset)
             .ToListAsync(cancellationToken);

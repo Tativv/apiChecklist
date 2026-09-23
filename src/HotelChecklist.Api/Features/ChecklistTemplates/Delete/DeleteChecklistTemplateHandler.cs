@@ -17,9 +17,16 @@ public sealed class DeleteChecklistTemplateHandler(AppDbContext db) : ICommandHa
         var hasInstances = await db.ChecklistInstances.AnyAsync(i => i.TemplateId == command.Id, cancellationToken);
 
         if (hasInstances)
-            return Result.Failure<Unit>(Error.Conflict("ChecklistTemplates.HasDependents", "No se puede eliminar un template con checklists asociados."));
+        {
+            // No se puede borrar físicamente sin romper el FK de las instancias ya generadas:
+            // se retira el template (deja de listarse y de generar checklists nuevos) sin tocar su histórico.
+            template.IsSnapshot = true;
+        }
+        else
+        {
+            db.ChecklistTemplates.Remove(template);
+        }
 
-        db.ChecklistTemplates.Remove(template);
         await db.SaveChangesAsync(cancellationToken);
 
         return Result.Success(Unit.Value);

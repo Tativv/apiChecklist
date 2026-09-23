@@ -9,7 +9,7 @@ public sealed class ListChecklistTemplatesHandler(AppDbContext db) : IQueryHandl
 {
     public async Task<Result<IReadOnlyList<ListChecklistTemplatesResponseItem>>> Handle(ListChecklistTemplatesQuery query, CancellationToken cancellationToken)
     {
-        var templatesQuery = db.ChecklistTemplates.AsQueryable();
+        var templatesQuery = db.ChecklistTemplates.Where(t => !t.IsSnapshot);
 
         if (query.AreaId is not null)
             templatesQuery = templatesQuery.Where(t => t.AreaId == query.AreaId);

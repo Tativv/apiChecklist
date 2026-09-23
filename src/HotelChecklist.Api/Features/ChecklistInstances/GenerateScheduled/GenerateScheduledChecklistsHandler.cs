@@ -16,6 +16,7 @@ public sealed class GenerateScheduledChecklistsHandler(
         var date = command.Date ?? DateOnly.FromDateTime(DateTime.UtcNow);
 
         var templates = await db.ChecklistTemplates
+            .Where(t => !t.IsSnapshot)
             .Include(t => t.TemplateAssets)
             .Include(t => t.TemplateSchedules).ThenInclude(ts => ts.Schedule)
             .ToListAsync(cancellationToken);

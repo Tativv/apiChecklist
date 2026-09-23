@@ -7,4 +7,5 @@ public sealed record UpdateChecklistTemplateResponse(
     Guid AreaId,
     int EstimatedDurationMinutes,
     List<ScheduleResponseItem> Schedules,
-    List<ChecklistTaskResponseItem> Tasks);
+    List<ChecklistTaskResponseItem> Tasks,
+    bool VersionedAsNewTemplate);

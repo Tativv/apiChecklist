@@ -15,9 +15,13 @@ public sealed class CreateChecklistTemplateHandler(AppDbContext db) : ICommandHa
         if (!areaExists)
             return Result.Failure<CreateChecklistTemplateResponse>(Error.NotFound("Areas.NotFound", "Área no encontrada."));
 
+        var templateId = Guid.NewGuid();
+
         var template = new ChecklistTemplate
         {
-            Id = Guid.NewGuid(),
+            Id = templateId,
+            GroupId = templateId,
+            IsSnapshot = false,
             Name = command.Name,
             Description = command.Description,
             AreaId = command.AreaId,

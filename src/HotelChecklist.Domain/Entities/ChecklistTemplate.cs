@@ -6,6 +6,10 @@ public sealed class ChecklistTemplate : IAuditable
 {
     public Guid Id { get; set; }
 
+    public Guid GroupId { get; set; }
+
+    public bool IsSnapshot { get; set; }
+
     public string Name { get; set; } = string.Empty;
 
     public string? Description { get; set; }

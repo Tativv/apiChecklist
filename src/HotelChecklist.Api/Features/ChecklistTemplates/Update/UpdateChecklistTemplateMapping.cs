@@ -14,12 +14,13 @@ public static class UpdateChecklistTemplateMapping
             request.Schedules,
             request.Tasks);
 
-    public static UpdateChecklistTemplateResponse ToResponse(this ChecklistTemplate template) => new(
+    public static UpdateChecklistTemplateResponse ToResponse(this ChecklistTemplate template, bool versionedAsNewTemplate) => new(
         template.Id,
         template.Name,
         template.Description,
         template.AreaId,
         template.EstimatedDurationMinutes,
         template.TemplateSchedules.OrderBy(ts => ts.Schedule.ExecutionOrder).Select(ts => ts.Schedule.ToResponseItem()).ToList(),
-        template.Tasks.OrderBy(t => t.Order).Select(t => t.ToResponseItem()).ToList());
+        template.Tasks.OrderBy(t => t.Order).Select(t => t.ToResponseItem()).ToList(),
+        versionedAsNewTemplate);
 }

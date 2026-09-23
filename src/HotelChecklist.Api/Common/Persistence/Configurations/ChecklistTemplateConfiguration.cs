@@ -19,6 +19,12 @@ public sealed class ChecklistTemplateConfiguration : IEntityTypeConfiguration<Ch
 
         builder.HasIndex(t => t.AreaId);
 
+        builder.HasIndex(t => new { t.GroupId, t.IsSnapshot });
+
+        builder.HasIndex(t => t.GroupId)
+            .IsUnique()
+            .HasFilter("is_snapshot = false");
+
         builder.HasMany(t => t.Tasks)
             .WithOne(task => task.Template)
             .HasForeignKey(task => task.TemplateId)
