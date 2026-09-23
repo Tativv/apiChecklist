@@ -8,11 +8,12 @@ using Microsoft.EntityFrameworkCore;
 
 namespace HotelChecklist.UnitTests.Features.ChecklistTemplates;
 
-// Nota: la rama "sin historial" de UpdateChecklistTemplateHandler (mutar en el lugar via
-// Tasks.Clear()+Add()) no tiene test unitario acá porque el proveedor InMemory de EF Core no
-// soporta ese patrón de reemplazo de colección requerida (falla con DbUpdateConcurrencyException
-// incluso en un repro mínimo sin lógica del handler de por medio) — es preexistente, no cambia en
-// esta feature, y ya está cubierta por la verificación manual contra Postgres real.
+// Nota: la rama "sin cambios de tareas" y la rama "tareas sin historial" de
+// UpdateChecklistTemplateHandler (que mutan Tasks/TemplateSchedules in situ via RemoveRange/
+// AddRange) no tienen test unitario acá para el caso general porque el proveedor InMemory de EF
+// Core no soporta bien ese patrón de reemplazo de colección requerida en algunos casos (visto ya
+// con Clear()+Add(); ver el historial de UpdateUserHandler/UserAreas) — están cubiertas por la
+// verificación manual contra Postgres real.
 public class UpdateChecklistTemplateHandlerTests
 {
     private static readonly DateOnly Today = DateOnly.FromDateTime(DateTime.UtcNow);
@@ -40,17 +41,135 @@ public class UpdateChecklistTemplateHandlerTests
         };
     }
 
-    private static UpdateChecklistTemplateCommand BuildUpdateCommand(Guid templateId, Guid areaId) => new(
+    private static UpdateChecklistTemplateCommand BuildCommand(
+        Guid templateId, Guid areaId, string name, string taskName) => new(
         templateId,
-        "Editado",
+        name,
         "desc",
         areaId,
         20,
         [DailySchedule],
-        [new ChecklistTaskRequest("Tarea editada", null, 1, "Continuous", [])]);
+        [new ChecklistTaskRequest(taskName, null, 1, "Continuous", [])]);
 
     [Fact]
-    public async Task Handle_TemplateWithPastExecutions_ShouldFreezeOldAndCreateNewVersion()
+    public async Task Handle_NameOnlyChange_ShouldMutateInPlace_EvenWithPastHistory()
+    {
+        await using var db = CreateDbContext();
+        var area = new Area { Id = Guid.NewGuid(), Name = "Área" };
+        var template = BuildTemplate(area.Id);
+        var taskId = template.Tasks.First().Id;
+        var taskName = template.Tasks.First().Name;
+        db.Areas.Add(area);
+        db.ChecklistTemplates.Add(template);
+        await db.SaveChangesAsync();
+
+        var pastInstance = new ChecklistInstance
+        {
+            Id = Guid.NewGuid(),
+            TemplateId = template.Id,
+            AssetId = Guid.NewGuid(),
+            Date = Yesterday,
+            Status = ChecklistStatus.Reviewed
+        };
+        db.ChecklistInstances.Add(pastInstance);
+        db.ChecklistTaskExecutions.Add(new ChecklistTaskExecution
+        {
+            Id = Guid.NewGuid(),
+            ChecklistInstanceId = pastInstance.Id,
+            TaskId = taskId
+        });
+        await db.SaveChangesAsync();
+
+        // Mismo nombre de tarea (sin cambios en la lista de tareas) — sólo cambia el nombre del template.
+        var command = BuildCommand(template.Id, area.Id, "Editado", taskName);
+
+        var handler = new UpdateChecklistTemplateHandler(db);
+        var result = await handler.Handle(command, CancellationToken.None);
+
+        result.IsSuccess.Should().BeTrue(result.IsFailure ? $"{result.Error.Code}: {result.Error.Message}" : "");
+        result.Value.VersionedAsNewTemplate.Should().BeFalse();
+        result.Value.Id.Should().Be(template.Id);
+        result.Value.Name.Should().Be("Editado");
+
+        (await db.ChecklistTemplates.CountAsync()).Should().Be(1);
+        var unchangedTask = await db.ChecklistTasks.FindAsync(taskId);
+        unchangedTask.Should().NotBeNull("la tarea original no debería tocarse si la lista de tareas no cambió");
+    }
+
+    [Fact]
+    public async Task Handle_TaskChange_NoHistory_ShouldMutateTasksInPlace()
+    {
+        await using var db = CreateDbContext();
+        var area = new Area { Id = Guid.NewGuid(), Name = "Área" };
+        var template = BuildTemplate(area.Id);
+        db.Areas.Add(area);
+        db.ChecklistTemplates.Add(template);
+        await db.SaveChangesAsync();
+
+        var command = BuildCommand(template.Id, area.Id, "Editado", "Tarea nueva");
+
+        var handler = new UpdateChecklistTemplateHandler(db);
+        var result = await handler.Handle(command, CancellationToken.None);
+
+        result.IsSuccess.Should().BeTrue(result.IsFailure ? $"{result.Error.Code}: {result.Error.Message}" : "");
+        result.Value.VersionedAsNewTemplate.Should().BeFalse();
+        result.Value.Id.Should().Be(template.Id);
+        result.Value.Tasks.Should().ContainSingle(t => t.Name == "Tarea nueva");
+
+        (await db.ChecklistTemplates.CountAsync()).Should().Be(1);
+    }
+
+    [Fact]
+    public async Task Handle_TaskChange_WithTodayPendingExecution_ShouldVersionEvenSameDay()
+    {
+        await using var db = CreateDbContext();
+        var area = new Area { Id = Guid.NewGuid(), Name = "Área" };
+        var template = BuildTemplate(area.Id);
+        var originalTaskId = template.Tasks.First().Id;
+        db.Areas.Add(area);
+        db.ChecklistTemplates.Add(template);
+        await db.SaveChangesAsync();
+
+        var todayInstance = new ChecklistInstance
+        {
+            Id = Guid.NewGuid(),
+            TemplateId = template.Id,
+            AssetId = Guid.NewGuid(),
+            Date = Today,
+            Status = ChecklistStatus.Pending
+        };
+        db.ChecklistInstances.Add(todayInstance);
+        db.ChecklistTaskExecutions.Add(new ChecklistTaskExecution
+        {
+            Id = Guid.NewGuid(),
+            ChecklistInstanceId = todayInstance.Id,
+            TaskId = originalTaskId
+        });
+        await db.SaveChangesAsync();
+
+        var command = BuildCommand(template.Id, area.Id, "Editado", "Tarea nueva");
+
+        var handler = new UpdateChecklistTemplateHandler(db);
+        var result = await handler.Handle(command, CancellationToken.None);
+
+        result.IsSuccess.Should().BeTrue(result.IsFailure ? $"{result.Error.Code}: {result.Error.Message}" : "");
+        result.Value.VersionedAsNewTemplate.Should().BeTrue();
+        result.Value.Id.Should().NotBe(template.Id);
+
+        var rows = await db.ChecklistTemplates.Include(t => t.Tasks).ToListAsync();
+        rows.Should().HaveCount(2);
+        var frozen = rows.Single(t => t.Id == template.Id);
+        frozen.IsSnapshot.Should().BeTrue();
+        frozen.Tasks.Should().ContainSingle(t => t.Id == originalTaskId);
+
+        // La instancia de hoy no se toca en absoluto: sigue apuntando a la versión congelada.
+        var unchangedInstance = await db.ChecklistInstances.FindAsync(todayInstance.Id);
+        unchangedInstance!.Status.Should().Be(ChecklistStatus.Pending);
+        unchangedInstance.TemplateId.Should().Be(template.Id);
+    }
+
+    [Fact]
+    public async Task Handle_TaskChange_WithPastExecution_ShouldFreezeOldAndCreateNewVersion()
     {
         await using var db = CreateDbContext();
         var area = new Area { Id = Guid.NewGuid(), Name = "Área" };
@@ -77,13 +196,14 @@ public class UpdateChecklistTemplateHandlerTests
         });
         await db.SaveChangesAsync();
 
-        var handler = new UpdateChecklistTemplateHandler(db);
-        var result = await handler.Handle(BuildUpdateCommand(template.Id, area.Id), CancellationToken.None);
+        var command = BuildCommand(template.Id, area.Id, "Editado", "Tarea nueva");
 
-        result.IsSuccess.Should().BeTrue();
+        var handler = new UpdateChecklistTemplateHandler(db);
+        var result = await handler.Handle(command, CancellationToken.None);
+
+        result.IsSuccess.Should().BeTrue(result.IsFailure ? $"{result.Error.Code}: {result.Error.Message}" : "");
         result.Value.VersionedAsNewTemplate.Should().BeTrue();
         result.Value.Id.Should().NotBe(template.Id);
-        result.Value.Name.Should().Be("Editado");
 
         var rows = await db.ChecklistTemplates.Include(t => t.Tasks).ToListAsync();
         rows.Should().HaveCount(2);
@@ -100,137 +220,6 @@ public class UpdateChecklistTemplateHandlerTests
     }
 
     [Fact]
-    public async Task Handle_OnlyTodayPendingInstance_ShouldMutateInPlaceAndRegenerateExecutions()
-    {
-        await using var db = CreateDbContext();
-        var area = new Area { Id = Guid.NewGuid(), Name = "Área" };
-        var template = BuildTemplate(area.Id);
-        var originalTaskId = template.Tasks.First().Id;
-        db.Areas.Add(area);
-        db.ChecklistTemplates.Add(template);
-        await db.SaveChangesAsync();
-
-        var todayInstance = new ChecklistInstance
-        {
-            Id = Guid.NewGuid(),
-            TemplateId = template.Id,
-            AssetId = Guid.NewGuid(),
-            Date = Today,
-            Status = ChecklistStatus.Approved
-        };
-        db.ChecklistInstances.Add(todayInstance);
-        db.ChecklistTaskExecutions.Add(new ChecklistTaskExecution
-        {
-            Id = Guid.NewGuid(),
-            ChecklistInstanceId = todayInstance.Id,
-            TaskId = originalTaskId,
-            AssignedUserId = Guid.NewGuid()
-        });
-        await db.SaveChangesAsync();
-
-        var handler = new UpdateChecklistTemplateHandler(db);
-        var result = await handler.Handle(BuildUpdateCommand(template.Id, area.Id), CancellationToken.None);
-
-        result.IsSuccess.Should().BeTrue();
-        result.Value.VersionedAsNewTemplate.Should().BeFalse();
-        result.Value.Id.Should().Be(template.Id);
-
-        (await db.ChecklistTemplates.CountAsync()).Should().Be(1);
-
-        var refreshedInstance = await db.ChecklistInstances.FindAsync(todayInstance.Id);
-        refreshedInstance!.Status.Should().Be(ChecklistStatus.Pending);
-
-        var executions = await db.ChecklistTaskExecutions.Where(e => e.ChecklistInstanceId == todayInstance.Id).ToListAsync();
-        executions.Should().ContainSingle();
-        executions[0].TaskId.Should().NotBe(originalTaskId);
-        executions[0].AssignedUserId.Should().BeNull();
-    }
-
-    [Fact]
-    public async Task Handle_TodayInProgressInstance_ShouldMutateAndResetToPending()
-    {
-        await using var db = CreateDbContext();
-        var area = new Area { Id = Guid.NewGuid(), Name = "Área" };
-        var template = BuildTemplate(area.Id);
-        var originalTaskId = template.Tasks.First().Id;
-        db.Areas.Add(area);
-        db.ChecklistTemplates.Add(template);
-        await db.SaveChangesAsync();
-
-        var todayInstance = new ChecklistInstance
-        {
-            Id = Guid.NewGuid(),
-            TemplateId = template.Id,
-            AssetId = Guid.NewGuid(),
-            Date = Today,
-            Status = ChecklistStatus.InProgress,
-            StartedAt = DateTimeOffset.UtcNow
-        };
-        db.ChecklistInstances.Add(todayInstance);
-        db.ChecklistTaskExecutions.Add(new ChecklistTaskExecution
-        {
-            Id = Guid.NewGuid(),
-            ChecklistInstanceId = todayInstance.Id,
-            TaskId = originalTaskId,
-            Status = TaskExecutionStatus.Completed
-        });
-        await db.SaveChangesAsync();
-
-        var handler = new UpdateChecklistTemplateHandler(db);
-        var result = await handler.Handle(BuildUpdateCommand(template.Id, area.Id), CancellationToken.None);
-
-        result.IsSuccess.Should().BeTrue();
-
-        var refreshedInstance = await db.ChecklistInstances.FindAsync(todayInstance.Id);
-        refreshedInstance!.Status.Should().Be(ChecklistStatus.Pending);
-        refreshedInstance.StartedAt.Should().BeNull();
-    }
-
-    [Theory]
-    [InlineData(ChecklistStatus.Completed)]
-    [InlineData(ChecklistStatus.Reviewed)]
-    public async Task Handle_TodayFinishedInstance_ShouldReturnConflictAskingToReopen(ChecklistStatus status)
-    {
-        await using var db = CreateDbContext();
-        var area = new Area { Id = Guid.NewGuid(), Name = "Área" };
-        var template = BuildTemplate(area.Id);
-        var originalTaskId = template.Tasks.First().Id;
-        db.Areas.Add(area);
-        db.ChecklistTemplates.Add(template);
-        await db.SaveChangesAsync();
-
-        var todayInstance = new ChecklistInstance
-        {
-            Id = Guid.NewGuid(),
-            TemplateId = template.Id,
-            AssetId = Guid.NewGuid(),
-            Date = Today,
-            Status = status
-        };
-        db.ChecklistInstances.Add(todayInstance);
-        db.ChecklistTaskExecutions.Add(new ChecklistTaskExecution
-        {
-            Id = Guid.NewGuid(),
-            ChecklistInstanceId = todayInstance.Id,
-            TaskId = originalTaskId,
-            Status = TaskExecutionStatus.Completed
-        });
-        await db.SaveChangesAsync();
-
-        var handler = new UpdateChecklistTemplateHandler(db);
-        var result = await handler.Handle(BuildUpdateCommand(template.Id, area.Id), CancellationToken.None);
-
-        result.IsFailure.Should().BeTrue();
-        result.Error.Code.Should().Be("ChecklistTemplates.TodayInstanceNotReopened");
-
-        // No debe haber mutado nada: ni el template, ni la instancia de hoy.
-        var unchangedTemplate = await db.ChecklistTemplates.FindAsync(template.Id);
-        unchangedTemplate!.Name.Should().Be("Original");
-        var unchangedInstance = await db.ChecklistInstances.FindAsync(todayInstance.Id);
-        unchangedInstance!.Status.Should().Be(status);
-    }
-
-    [Fact]
     public async Task Handle_SnapshotTemplate_ShouldReturnConflict()
     {
         await using var db = CreateDbContext();
@@ -241,8 +230,10 @@ public class UpdateChecklistTemplateHandlerTests
         db.ChecklistTemplates.Add(template);
         await db.SaveChangesAsync();
 
+        var command = BuildCommand(template.Id, area.Id, "Editado", "Tarea nueva");
+
         var handler = new UpdateChecklistTemplateHandler(db);
-        var result = await handler.Handle(BuildUpdateCommand(template.Id, area.Id), CancellationToken.None);
+        var result = await handler.Handle(command, CancellationToken.None);
 
         result.IsFailure.Should().BeTrue();
         result.Error.Code.Should().Be("ChecklistTemplates.IsSnapshot");

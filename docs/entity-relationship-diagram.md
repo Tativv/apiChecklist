@@ -218,21 +218,20 @@ erDiagram
 
 ## Notas de diseño
 
-- **`ChecklistTemplate` versiona por copy-on-write en vez de mutar con historial**: editar un
-  template sin `ChecklistTaskExecution` asociadas sigue mutando la fila en el lugar (mismo `id`).
-  `Update` distingue dos casos según dónde está esa `ChecklistTaskExecution`:
-  - Si pertenece a una `ChecklistInstance` de una fecha **anterior a hoy**: congela la fila actual
-    (`is_snapshot = true`, sin tocarle ni una tarea — evita el cascade delete que antes bloqueaba
-    la edición por completo) y crea una fila nueva con el mismo `group_id`, `is_snapshot = false`
-    y los `TemplateAsset` copiados.
-  - Si sólo pertenece a instancia(s) de **hoy**: si alguna está `Completed`/`Reviewed`, `Update`
-    devuelve 409 pidiendo reabrirla primero (`ChecklistTemplates.TodayInstanceNotReopened`). Si
-    están en `Pending`/`Approved`/`InProgress` (incluida una recién reabierta), muta la fila en el
-    lugar igual que el caso sin historial, pero además borra las `ChecklistTaskExecution` de esas
-    instancias de hoy, regenera unas nuevas en `Pending` para las tareas editadas, y resetea esas
-    instancias a `Pending` (`StartedAt`/`CompletedAt`/`DurationSeconds` a null) — el checklist de
-    hoy "empieza de nuevo" con la definición nueva en vez de generar otra versión por cada retoque
-    del mismo día.
+- **`ChecklistTemplate` versiona por copy-on-write en vez de mutar con historial**: `Update`
+  separa los campos por si tocan o no `ChecklistTask`/`ChecklistTaskExecution` (FK `Restrict`):
+  - **Nombre/descripción/área/duración/horarios del template**: nunca tocan `ChecklistTask`, así
+    que siempre son seguros de mutar en el lugar (mismo `id`), sin importar si el template ya
+    generó checklists, hoy o en el pasado.
+  - **Lista de tareas** (agregar/quitar/renombrar tareas o sus horarios): si el template todavía
+    no generó ninguna `ChecklistTaskExecution`, se reemplaza in situ igual que antes. En cuanto
+    generó al menos una — de **cualquier fecha y cualquier status**, incluida una instancia de hoy
+    en `Pending` — `Update` versiona siempre: congela la fila actual (`is_snapshot = true`, sin
+    tocarle ni una tarea) y crea una fila nueva con el mismo `group_id`, `is_snapshot = false`, las
+    tareas editadas y los `TemplateAsset` copiados. Las instancias/ejecuciones ya generadas no se
+    tocan en absoluto y siguen apuntando a la fila congelada. Un mismo template puede así tener
+    listas de tareas distintas según el momento en que se generó cada checklist — el mismo patrón
+    que ya existía para `TemplateAsset`.
 
   `List`/`GenerateScheduledChecklists`/`GetUpcomingOccurrences` sólo consideran
   `is_snapshot = false`; `GetById` sobre un `id` congelado resuelve transparentemente a la versión
