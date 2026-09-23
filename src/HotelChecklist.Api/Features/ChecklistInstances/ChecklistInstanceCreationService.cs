@@ -53,7 +53,7 @@ public sealed class ChecklistInstanceCreationService(AppDbContext db, ScheduleEv
         return Result.Success(instance);
     }
 
-    private static IEnumerable<ChecklistTaskExecution> BuildExecutions(ChecklistTask task, DateOnly date)
+    public static IEnumerable<ChecklistTaskExecution> BuildExecutions(ChecklistTask task, DateOnly date)
     {
         if (task.ExecutionMode == TaskExecutionMode.Continuous)
         {
