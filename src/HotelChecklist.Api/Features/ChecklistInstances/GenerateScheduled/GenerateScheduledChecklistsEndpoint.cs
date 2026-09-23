@@ -16,7 +16,7 @@ public static class GenerateScheduledChecklistsEndpoint
                 var result = await handler.Handle(new GenerateScheduledChecklistsCommand(date), cancellationToken);
                 return result.ToHttpResult(StatusCodes.Status201Created);
             })
-            .RequireAuthorization(Policies.ManagerOrAbove)
+            .RequireAuthorization(Policies.SupervisorOrAbove)
             .WithName("GenerateScheduledChecklists")
             .Produces<GenerateScheduledChecklistsResponse>(StatusCodes.Status201Created);
     }

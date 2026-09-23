@@ -16,7 +16,7 @@ public static class DeleteChecklistInstanceEndpoint
                 var result = await handler.Handle(new DeleteChecklistInstanceCommand(id), cancellationToken);
                 return result.ToHttpResult();
             })
-            .RequireAuthorization(Policies.ManagerOrAbove)
+            .RequireAuthorization(Policies.SupervisorOrAbove)
             .WithName("DeleteChecklistInstance")
             .Produces(StatusCodes.Status204NoContent)
             .ProducesProblem(StatusCodes.Status404NotFound);

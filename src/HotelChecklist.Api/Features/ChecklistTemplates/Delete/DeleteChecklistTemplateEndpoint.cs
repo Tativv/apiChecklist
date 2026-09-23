@@ -16,7 +16,7 @@ public static class DeleteChecklistTemplateEndpoint
                 var result = await handler.Handle(new DeleteChecklistTemplateCommand(id), cancellationToken);
                 return result.ToHttpResult();
             })
-            .RequireAuthorization(Policies.ManagerOrAbove)
+            .RequireAuthorization(Policies.SupervisorOrAbove)
             .WithName("DeleteChecklistTemplate")
             .Produces(StatusCodes.Status204NoContent)
             .ProducesProblem(StatusCodes.Status404NotFound)

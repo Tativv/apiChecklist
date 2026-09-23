@@ -19,7 +19,7 @@ public static class UpdateChecklistTemplateEndpoint
                 return result.ToHttpResult();
             })
             .AddEndpointFilter<ValidationFilter<UpdateChecklistTemplateRequest>>()
-            .RequireAuthorization(Policies.ManagerOrAbove)
+            .RequireAuthorization(Policies.SupervisorOrAbove)
             .WithName("UpdateChecklistTemplate")
             .Produces<UpdateChecklistTemplateResponse>()
             .ProducesValidationProblem()

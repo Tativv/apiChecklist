@@ -19,7 +19,7 @@ public static class ConfigureTemplateAssetsEndpoint
                 return result.ToHttpResult();
             })
             .AddEndpointFilter<ValidationFilter<ConfigureTemplateAssetsRequest>>()
-            .RequireAuthorization(Policies.ManagerOrAbove)
+            .RequireAuthorization(Policies.SupervisorOrAbove)
             .WithName("ConfigureTemplateAssets")
             .Produces<ConfigureTemplateAssetsResponse>()
             .ProducesValidationProblem()
