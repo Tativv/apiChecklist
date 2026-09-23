@@ -19,7 +19,7 @@ public sealed class ListUsersHandler(AppDbContext db) : IQueryHandler<ListUsersQ
             usersQuery = usersQuery.Where(u => u.Role == role);
 
         var users = await usersQuery
-            .OrderBy(u => u.Name)
+            .OrderByDescending(u => u.CreatedAtUtc)
             .Select(u => new ListUsersResponseItem(
                 u.Id, u.Name, u.Email, u.Role.ToString(), u.Active, u.UserAreas.Select(ua => ua.AreaId).ToList()))
             .ToListAsync(cancellationToken);

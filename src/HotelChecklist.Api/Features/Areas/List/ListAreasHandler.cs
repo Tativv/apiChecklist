@@ -10,7 +10,7 @@ public sealed class ListAreasHandler(AppDbContext db) : IQueryHandler<ListAreasQ
     public async Task<Result<IReadOnlyList<ListAreasResponseItem>>> Handle(ListAreasQuery query, CancellationToken cancellationToken)
     {
         var areas = await db.Areas
-            .OrderBy(a => a.Name)
+            .OrderByDescending(a => a.CreatedAtUtc)
             .Select(a => new ListAreasResponseItem(a.Id, a.Name))
             .ToListAsync(cancellationToken);
 

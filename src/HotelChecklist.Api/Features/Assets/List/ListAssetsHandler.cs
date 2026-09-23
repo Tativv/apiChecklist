@@ -18,7 +18,7 @@ public sealed class ListAssetsHandler(AppDbContext db) : IQueryHandler<ListAsset
             assetsQuery = assetsQuery.Where(a => a.Active == query.Active);
 
         var assets = await assetsQuery
-            .OrderBy(a => a.Name)
+            .OrderByDescending(a => a.CreatedAtUtc)
             .Select(a => new ListAssetsResponseItem(a.Id, a.Name, a.Type, a.AreaId, a.Active))
             .ToListAsync(cancellationToken);
 

@@ -15,7 +15,7 @@ public sealed class ListChecklistTemplatesHandler(AppDbContext db) : IQueryHandl
             templatesQuery = templatesQuery.Where(t => t.AreaId == query.AreaId);
 
         var templates = await templatesQuery
-            .OrderBy(t => t.Name)
+            .OrderByDescending(t => t.CreatedAtUtc)
             .Select(t => new ListChecklistTemplatesResponseItem(
                 t.Id,
                 t.Name,
