@@ -17,8 +17,17 @@ public sealed class UpdateChecklistTemplateRequestValidator : AbstractValidator<
             .Must(m => Enum.TryParse<TaskExecutionMode>(m, ignoreCase: true, out _))
             .WithMessage($"ExecutionMode must be one of: {string.Join(", ", Enum.GetNames<TaskExecutionMode>())}.");
 
-        RuleFor(r => r.Schedules).NotEmpty().WithMessage("A template requires at least one schedule.");
         RuleForEach(r => r.Schedules).SetValidator(new ScheduleInputValidator());
+
+        When(r => string.Equals(r.ExecutionMode, nameof(TaskExecutionMode.Scheduled), StringComparison.OrdinalIgnoreCase), () =>
+        {
+            RuleFor(r => r.Schedules).NotEmpty().WithMessage("A scheduled template requires at least one schedule.");
+        });
+
+        When(r => string.Equals(r.ExecutionMode, nameof(TaskExecutionMode.Continuous), StringComparison.OrdinalIgnoreCase), () =>
+        {
+            RuleFor(r => r.Schedules).Empty().WithMessage("Continuous templates must not have schedules.");
+        });
 
         RuleFor(r => r.Tasks).NotEmpty();
         RuleForEach(r => r.Tasks).SetValidator(new ChecklistTaskRequestValidator());

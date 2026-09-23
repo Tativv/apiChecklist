@@ -28,7 +28,9 @@ public sealed class ScheduleEvaluationService
     }
 
     public bool ShouldExecuteTemplate(ChecklistTemplate template, DateOnly date) =>
-        template.TemplateSchedules.Any(ts => ShouldExecute(ts.Schedule, date));
+        template.ExecutionMode == TaskExecutionMode.Continuous
+            ? date >= DateOnly.FromDateTime(template.CreatedAtUtc.UtcDateTime)
+            : template.TemplateSchedules.Any(ts => ShouldExecute(ts.Schedule, date));
 
     private static int DaysSinceAnchor(DateOnly anchor, DateOnly date) => date.DayNumber - anchor.DayNumber;
 
