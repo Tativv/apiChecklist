@@ -22,7 +22,7 @@ public static class AddTaskCommentEndpoint
                 await using var content = file?.OpenReadStream();
 
                 var command = new AddTaskCommentCommand(
-                    instanceId, taskExecutionId, text, user.GetUserId(),
+                    instanceId, taskExecutionId, text, user.GetUserId(), user.IsSupervisorOrAbove(),
                     content, file?.FileName, file?.ContentType, file?.Length);
 
                 var result = await handler.Handle(command, cancellationToken);
@@ -33,6 +33,7 @@ public static class AddTaskCommentEndpoint
             .WithName("AddTaskComment")
             .Produces<TaskCommentResponseItem>(StatusCodes.Status201Created)
             .ProducesValidationProblem()
-            .ProducesProblem(StatusCodes.Status404NotFound);
+            .ProducesProblem(StatusCodes.Status404NotFound)
+            .ProducesProblem(StatusCodes.Status403Forbidden);
     }
 }

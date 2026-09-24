@@ -3,6 +3,7 @@ using HotelChecklist.Api.Common.Cqrs;
 using HotelChecklist.Api.Common.Persistence;
 using HotelChecklist.Domain.Common;
 using HotelChecklist.Domain.Entities;
+using HotelChecklist.Domain.Enums;
 using Microsoft.EntityFrameworkCore;
 
 namespace HotelChecklist.Api.Features.ChecklistInstances.TaskComments;
@@ -23,11 +24,17 @@ public sealed class AddTaskCommentHandler(AppDbContext db, IFileStorage fileStor
             return Result.Failure<TaskCommentResponseItem>(
                 Error.Validation("ChecklistTaskComments.TextTooLong", "O comentário não pode ter mais de 2000 caracteres."));
 
-        var taskExists = await db.ChecklistTaskExecutions
-            .AnyAsync(e => e.Id == command.TaskExecutionId && e.ChecklistInstanceId == command.InstanceId, cancellationToken);
+        var taskExecution = await db.ChecklistTaskExecutions
+            .FirstOrDefaultAsync(e => e.Id == command.TaskExecutionId && e.ChecklistInstanceId == command.InstanceId, cancellationToken);
 
-        if (!taskExists)
+        if (taskExecution is null)
             return Result.Failure<TaskCommentResponseItem>(Error.NotFound("ChecklistTaskExecutions.NotFound", "Tarea no encontrada."));
+
+        // Una vez revisada, la tarea sigue siendo visible/consultable para el colaborador asignado,
+        // pero ya no acepta comentarios nuevos de su parte — solo Supervisor+ puede seguir anotando.
+        if (taskExecution.Status == TaskExecutionStatus.Reviewed && !command.ActingUserIsSupervisorOrAbove)
+            return Result.Failure<TaskCommentResponseItem>(
+                Error.Forbidden("ChecklistTaskComments.TaskReviewed", "Esta tarea ya fue revisada; no se pueden agregar más comentarios."));
 
         string? filePath = null;
 

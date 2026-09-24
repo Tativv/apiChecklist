@@ -7,6 +7,7 @@ public sealed record AddTaskCommentCommand(
     Guid TaskExecutionId,
     string? Text,
     Guid ActingUserId,
+    bool ActingUserIsSupervisorOrAbove,
     Stream? FileContent,
     string? FileName,
     string? FileContentType,
