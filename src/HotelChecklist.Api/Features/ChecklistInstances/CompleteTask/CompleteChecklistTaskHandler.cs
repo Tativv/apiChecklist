@@ -25,19 +25,27 @@ public sealed class CompleteChecklistTaskHandler(AppDbContext db) : ICommandHand
         if (taskExecution is null)
             return Result.Failure<CompleteChecklistTaskResponse>(Error.NotFound("ChecklistTaskExecutions.NotFound", "Tarea no encontrada."));
 
+        if (taskExecution.Status != TaskExecutionStatus.InProgress)
+            return Result.Failure<CompleteChecklistTaskResponse>(
+                Error.Conflict("ChecklistTaskExecutions.InvalidTransition", $"No se puede concluir una tarea en estado {taskExecution.Status}."));
+
         var isOwnTask = taskExecution.AssignedUserId == command.ActingUserId;
 
         if (!command.ActingUserIsSupervisorOrAbove && !isOwnTask)
             return Result.Failure<CompleteChecklistTaskResponse>(
-                Error.Forbidden("ChecklistTaskExecutions.NotAssigned", "Solo el colaborador asignado o un supervisor pueden completar esta tarea."));
+                Error.Forbidden("ChecklistTaskExecutions.NotAssigned", "Solo el colaborador asignado o un supervisor pueden concluir esta tarea."));
 
-        taskExecution.Status = command.Completed ? TaskExecutionStatus.Completed : TaskExecutionStatus.Pending;
-        taskExecution.ExecutedAtUtc = command.Completed ? DateTimeOffset.UtcNow : null;
-        taskExecution.ExecutedByUserId = command.Completed ? command.ActingUserId : null;
+        taskExecution.Status = TaskExecutionStatus.Completed;
+        taskExecution.CompletedAt = DateTimeOffset.UtcNow;
+        taskExecution.DurationSeconds = taskExecution.StartedAt is null
+            ? null
+            : (long)(taskExecution.CompletedAt.Value - taskExecution.StartedAt.Value).TotalSeconds;
+        taskExecution.ExecutedByUserId = command.ActingUserId;
         taskExecution.Comment = command.Comment;
 
         await db.SaveChangesAsync(cancellationToken);
 
-        return Result.Success(new CompleteChecklistTaskResponse(taskExecution.Id, taskExecution.Status.ToString(), taskExecution.ExecutedAtUtc, taskExecution.Comment));
+        return Result.Success(new CompleteChecklistTaskResponse(
+            taskExecution.Id, taskExecution.Status.ToString(), taskExecution.CompletedAt, taskExecution.DurationSeconds, taskExecution.Comment));
     }
 }

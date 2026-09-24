@@ -21,10 +21,8 @@ public sealed class ByDateReportHandler(AppDbContext db) : IQueryHandler<ByDateR
                 g.Key,
                 g.Count(),
                 g.Count(r => r.Status == ChecklistStatus.Pending),
-                g.Count(r => r.Status == ChecklistStatus.Approved),
                 g.Count(r => r.Status == ChecklistStatus.InProgress),
                 g.Count(r => r.Status == ChecklistStatus.Completed),
-                g.Count(r => r.Status == ChecklistStatus.Reviewed),
                 g.Any(r => r.DurationSeconds != null) ? g.Where(r => r.DurationSeconds != null).Average(r => r.DurationSeconds!.Value) : null))
             .OrderBy(item => item.Date)
             .ToList();

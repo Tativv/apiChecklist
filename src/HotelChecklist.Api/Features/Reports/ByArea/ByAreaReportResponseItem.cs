@@ -5,8 +5,6 @@ public sealed record ByAreaReportResponseItem(
     string AreaName,
     int Total,
     int Pending,
-    int Approved,
     int InProgress,
     int Completed,
-    int Reviewed,
     double? AverageDurationSeconds);

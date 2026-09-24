@@ -1,6 +1,5 @@
 using FluentValidation;
 using HotelChecklist.Api.Common.Cqrs;
-using HotelChecklist.Api.Features.ChecklistInstances.Approve;
 using HotelChecklist.Api.Features.ChecklistInstances.AssignTask;
 using HotelChecklist.Api.Features.ChecklistInstances.CompleteTask;
 using HotelChecklist.Api.Features.ChecklistInstances.Create;
@@ -13,7 +12,8 @@ using HotelChecklist.Api.Features.ChecklistInstances.GetMyAssignedTasks;
 using HotelChecklist.Api.Features.ChecklistInstances.GetUpcomingOccurrences;
 using HotelChecklist.Api.Features.ChecklistInstances.List;
 using HotelChecklist.Api.Features.ChecklistInstances.Reopen;
-using HotelChecklist.Api.Features.ChecklistInstances.Start;
+using HotelChecklist.Api.Features.ChecklistInstances.ReviewTask;
+using HotelChecklist.Api.Features.ChecklistInstances.StartTask;
 using HotelChecklist.Api.Features.ChecklistInstances.UploadEvidence;
 
 namespace HotelChecklist.Api.Features.ChecklistInstances;
@@ -38,10 +38,12 @@ public static class ChecklistInstancesEndpoints
 
         services.AddScoped<IQueryHandler<ListChecklistInstancesQuery, IReadOnlyList<ListChecklistInstancesResponseItem>>, ListChecklistInstancesHandler>();
 
-        services.AddScoped<ICommandHandler<StartChecklistInstanceCommand, StartChecklistInstanceResponse>, StartChecklistInstanceHandler>();
+        services.AddScoped<ICommandHandler<StartTaskCommand, StartTaskResponse>, StartTaskHandler>();
 
         services.AddScoped<ICommandHandler<CompleteChecklistTaskCommand, CompleteChecklistTaskResponse>, CompleteChecklistTaskHandler>();
         services.AddScoped<IValidator<CompleteChecklistTaskRequest>, CompleteChecklistTaskRequestValidator>();
+
+        services.AddScoped<ICommandHandler<ReviewTaskCommand, ReviewTaskResponse>, ReviewTaskHandler>();
 
         services.AddScoped<ICommandHandler<AssignTaskCommand, AssignTaskResponse>, AssignTaskHandler>();
 
@@ -52,8 +54,6 @@ public static class ChecklistInstancesEndpoints
         services.AddScoped<IQueryHandler<GetEvidenceFileQuery, GetEvidenceFileResponse>, GetEvidenceFileHandler>();
 
         services.AddScoped<ICommandHandler<FinishChecklistInstanceCommand, FinishChecklistInstanceResponse>, FinishChecklistInstanceHandler>();
-
-        services.AddScoped<ICommandHandler<ApproveChecklistInstanceCommand, ApproveChecklistInstanceResponse>, ApproveChecklistInstanceHandler>();
 
         services.AddScoped<ICommandHandler<ReopenChecklistInstanceCommand, ReopenChecklistInstanceResponse>, ReopenChecklistInstanceHandler>();
         services.AddScoped<IValidator<ReopenChecklistInstanceRequest>, ReopenChecklistInstanceRequestValidator>();
@@ -72,13 +72,13 @@ public static class ChecklistInstancesEndpoints
         group.MapGetMyAssignedTasks();
         group.MapGetChecklistInstanceById();
         group.MapListChecklistInstances();
-        group.MapStartChecklistInstance();
+        group.MapStartTask();
         group.MapCompleteChecklistTask();
+        group.MapReviewTask();
         group.MapAssignTask();
         group.MapUploadEvidence();
         group.MapGetEvidenceFile();
         group.MapFinishChecklistInstance();
-        group.MapApproveChecklistInstance();
         group.MapReopenChecklistInstance();
     }
 }

@@ -14,7 +14,13 @@ public sealed class ChecklistTaskExecution
 
     public DateTimeOffset? ScheduledForUtc { get; set; }
 
-    public DateTimeOffset? ExecutedAtUtc { get; set; }
+    public int? EstimatedDurationMinutes { get; set; }
+
+    public DateTimeOffset? StartedAt { get; set; }
+
+    public DateTimeOffset? CompletedAt { get; set; }
+
+    public long? DurationSeconds { get; set; }
 
     public TaskExecutionStatus Status { get; set; } = TaskExecutionStatus.Pending;
 

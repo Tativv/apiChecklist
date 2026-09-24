@@ -15,7 +15,7 @@ public class FinishChecklistInstanceHandlerTests
             .UseInMemoryDatabase(Guid.NewGuid().ToString())
             .Options);
 
-    private static ChecklistInstance BuildInProgressInstance(Guid assignedUserId, bool allTasksCompleted)
+    private static ChecklistInstance BuildInProgressInstance(Guid assignedUserId, bool allTasksDone)
     {
         var instance = new ChecklistInstance
         {
@@ -31,16 +31,16 @@ public class FinishChecklistInstanceHandlerTests
                 {
                     Id = Guid.NewGuid(),
                     TaskId = Guid.NewGuid(),
-                    Status = TaskExecutionStatus.Completed,
-                    ExecutedAtUtc = DateTimeOffset.UtcNow,
+                    Status = TaskExecutionStatus.Reviewed,
+                    CompletedAt = DateTimeOffset.UtcNow,
                     AssignedUserId = assignedUserId
                 },
                 new ChecklistTaskExecution
                 {
                     Id = Guid.NewGuid(),
                     TaskId = Guid.NewGuid(),
-                    Status = allTasksCompleted ? TaskExecutionStatus.Completed : TaskExecutionStatus.Pending,
-                    ExecutedAtUtc = allTasksCompleted ? DateTimeOffset.UtcNow : null,
+                    Status = allTasksDone ? TaskExecutionStatus.Completed : TaskExecutionStatus.InProgress,
+                    CompletedAt = allTasksDone ? DateTimeOffset.UtcNow : null,
                     AssignedUserId = assignedUserId
                 }
             ]
@@ -50,55 +50,37 @@ public class FinishChecklistInstanceHandlerTests
     }
 
     [Fact]
-    public async Task Handle_AllTasksCompleted_ShouldComputeDurationAndComplete()
+    public async Task Handle_AllTasksCompletedOrReviewed_ShouldComputeDurationAndComplete()
     {
         await using var db = CreateDbContext();
         var userId = Guid.NewGuid();
-        var instance = BuildInProgressInstance(userId, allTasksCompleted: true);
+        var instance = BuildInProgressInstance(userId, allTasksDone: true);
         db.ChecklistInstances.Add(instance);
         await db.SaveChangesAsync();
 
         var handler = new FinishChecklistInstanceHandler(db);
 
-        var result = await handler.Handle(new FinishChecklistInstanceCommand(instance.Id, userId, ActingUserIsSupervisorOrAbove: false), CancellationToken.None);
+        var result = await handler.Handle(new FinishChecklistInstanceCommand(instance.Id), CancellationToken.None);
 
-        result.IsSuccess.Should().BeTrue();
+        result.IsSuccess.Should().BeTrue(result.IsFailure ? $"{result.Error.Code}: {result.Error.Message}" : "");
         result.Value.Status.Should().Be(nameof(ChecklistStatus.Completed));
         result.Value.DurationSeconds.Should().BeGreaterThan(0);
     }
 
     [Fact]
-    public async Task Handle_WithPendingTasks_ShouldReturnValidationError()
+    public async Task Handle_WithTasksNotYetDone_ShouldReturnValidationError()
     {
         await using var db = CreateDbContext();
         var userId = Guid.NewGuid();
-        var instance = BuildInProgressInstance(userId, allTasksCompleted: false);
+        var instance = BuildInProgressInstance(userId, allTasksDone: false);
         db.ChecklistInstances.Add(instance);
         await db.SaveChangesAsync();
 
         var handler = new FinishChecklistInstanceHandler(db);
 
-        var result = await handler.Handle(new FinishChecklistInstanceCommand(instance.Id, userId, ActingUserIsSupervisorOrAbove: false), CancellationToken.None);
+        var result = await handler.Handle(new FinishChecklistInstanceCommand(instance.Id), CancellationToken.None);
 
         result.IsFailure.Should().BeTrue();
         result.Error.Type.Should().Be(ErrorType.Validation);
-    }
-
-    [Fact]
-    public async Task Handle_ByUnassignedNonSupervisorUser_ShouldReturnForbidden()
-    {
-        await using var db = CreateDbContext();
-        var assignedUserId = Guid.NewGuid();
-        var instance = BuildInProgressInstance(assignedUserId, allTasksCompleted: true);
-        db.ChecklistInstances.Add(instance);
-        await db.SaveChangesAsync();
-
-        var handler = new FinishChecklistInstanceHandler(db);
-
-        var result = await handler.Handle(
-            new FinishChecklistInstanceCommand(instance.Id, Guid.NewGuid(), ActingUserIsSupervisorOrAbove: false), CancellationToken.None);
-
-        result.IsFailure.Should().BeTrue();
-        result.Error.Type.Should().Be(ErrorType.Forbidden);
     }
 }

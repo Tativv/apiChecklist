@@ -43,22 +43,18 @@ public sealed class AssignTaskHandler(AppDbContext db) : ICommandHandler<AssignT
 
         taskExecution.AssignedUserId = command.UserId;
         taskExecution.CreatedByUserId = command.UserId is null ? null : command.ActingUserId;
+        taskExecution.EstimatedDurationMinutes = command.EstimatedDurationMinutes;
 
-        if (instance.Status is ChecklistStatus.Pending or ChecklistStatus.Approved)
+        // La primera asignación de cualquier tarea arranca el checklist entero — no hace falta un
+        // "iniciar" manual aparte. Solo avanza hacia adelante: desasignar no lo hace retroceder.
+        if (command.UserId is not null && instance.Status == ChecklistStatus.Pending)
         {
-            var siblingAssignments = await db.ChecklistTaskExecutions
-                .Where(e => e.ChecklistInstanceId == command.InstanceId)
-                .Select(e => new { e.Id, e.AssignedUserId })
-                .ToListAsync(cancellationToken);
-
-            var allTasksAssigned = siblingAssignments.All(e =>
-                e.Id == taskExecution.Id ? taskExecution.AssignedUserId is not null : e.AssignedUserId is not null);
-
-            instance.Status = allTasksAssigned ? ChecklistStatus.Approved : ChecklistStatus.Pending;
+            instance.Status = ChecklistStatus.InProgress;
+            instance.StartedAt = DateTimeOffset.UtcNow;
         }
 
         await db.SaveChangesAsync(cancellationToken);
 
-        return Result.Success(new AssignTaskResponse(taskExecution.Id, taskExecution.AssignedUserId, taskExecution.CreatedByUserId));
+        return Result.Success(new AssignTaskResponse(taskExecution.Id, taskExecution.AssignedUserId, taskExecution.CreatedByUserId, taskExecution.EstimatedDurationMinutes));
     }
 }

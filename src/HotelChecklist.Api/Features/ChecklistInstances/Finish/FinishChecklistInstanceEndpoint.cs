@@ -1,4 +1,3 @@
-using System.Security.Claims;
 using HotelChecklist.Api.Common.Auth;
 using HotelChecklist.Api.Common.Cqrs;
 using HotelChecklist.Api.Common.Errors;
@@ -11,15 +10,13 @@ public static class FinishChecklistInstanceEndpoint
     {
         group.MapPost("/{id:guid}/finish", async (
                 Guid id,
-                ClaimsPrincipal user,
                 ICommandHandler<FinishChecklistInstanceCommand, FinishChecklistInstanceResponse> handler,
                 CancellationToken cancellationToken) =>
             {
-                var command = new FinishChecklistInstanceCommand(id, user.GetUserId(), user.IsSupervisorOrAbove());
-                var result = await handler.Handle(command, cancellationToken);
+                var result = await handler.Handle(new FinishChecklistInstanceCommand(id), cancellationToken);
                 return result.ToHttpResult();
             })
-            .RequireAuthorization(Policies.AnyRole)
+            .RequireAuthorization(Policies.SupervisorOrAbove)
             .WithName("FinishChecklistInstance")
             .Produces<FinishChecklistInstanceResponse>()
             .ProducesValidationProblem()

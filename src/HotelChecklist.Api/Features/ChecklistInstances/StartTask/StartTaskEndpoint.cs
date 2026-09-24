@@ -3,25 +3,26 @@ using HotelChecklist.Api.Common.Auth;
 using HotelChecklist.Api.Common.Cqrs;
 using HotelChecklist.Api.Common.Errors;
 
-namespace HotelChecklist.Api.Features.ChecklistInstances.Start;
+namespace HotelChecklist.Api.Features.ChecklistInstances.StartTask;
 
-public static class StartChecklistInstanceEndpoint
+public static class StartTaskEndpoint
 {
-    public static void MapStartChecklistInstance(this RouteGroupBuilder group)
+    public static void MapStartTask(this RouteGroupBuilder group)
     {
-        group.MapPost("/{id:guid}/start", async (
-                Guid id,
+        group.MapPost("/{instanceId:guid}/tasks/{taskExecutionId:guid}/start", async (
+                Guid instanceId,
+                Guid taskExecutionId,
                 ClaimsPrincipal user,
-                ICommandHandler<StartChecklistInstanceCommand, StartChecklistInstanceResponse> handler,
+                ICommandHandler<StartTaskCommand, StartTaskResponse> handler,
                 CancellationToken cancellationToken) =>
             {
-                var command = new StartChecklistInstanceCommand(id, user.GetUserId(), user.IsSupervisorOrAbove());
+                var command = new StartTaskCommand(instanceId, taskExecutionId, user.GetUserId(), user.IsSupervisorOrAbove());
                 var result = await handler.Handle(command, cancellationToken);
                 return result.ToHttpResult();
             })
             .RequireAuthorization(Policies.AnyRole)
-            .WithName("StartChecklistInstance")
-            .Produces<StartChecklistInstanceResponse>()
+            .WithName("StartTask")
+            .Produces<StartTaskResponse>()
             .ProducesProblem(StatusCodes.Status404NotFound)
             .ProducesProblem(StatusCodes.Status409Conflict)
             .ProducesProblem(StatusCodes.Status403Forbidden);

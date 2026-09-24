@@ -5,11 +5,9 @@ using FluentAssertions;
 using HotelChecklist.Api.Features.Areas.Create;
 using HotelChecklist.Api.Features.Assets.Create;
 using HotelChecklist.Api.Features.Auth.Login;
-using HotelChecklist.Api.Features.ChecklistInstances.Approve;
 using HotelChecklist.Api.Features.ChecklistInstances.Create;
 using HotelChecklist.Api.Features.ChecklistInstances.Finish;
 using HotelChecklist.Api.Features.ChecklistInstances.GetById;
-using HotelChecklist.Api.Features.ChecklistInstances.Start;
 using HotelChecklist.Api.Features.ChecklistTemplates;
 using HotelChecklist.Api.Features.ChecklistTemplates.ConfigureAssets;
 using HotelChecklist.Api.Features.ChecklistTemplates.Create;
@@ -44,7 +42,7 @@ public class ChecklistLifecycleTests : IClassFixture<CustomWebApplicationFactory
     public async Task DisposeAsync() => await _factory.DisposeAsync();
 
     [Fact]
-    public async Task FullChecklistLifecycle_FromCreationToApproval_ShouldSucceed()
+    public async Task FullChecklistLifecycle_FromCreationToCompletion_ShouldSucceed()
     {
         var areaResponse = await _client.PostAsJsonAsync("/api/areas", new CreateAreaRequest($"Área {Guid.NewGuid()}"));
         areaResponse.StatusCode.Should().Be(HttpStatusCode.Created);
@@ -84,31 +82,38 @@ public class ChecklistLifecycleTests : IClassFixture<CustomWebApplicationFactory
         var instanceId = createdInstance!.Id;
 
         var pendingDetail = await _client.GetFromJsonAsync<GetChecklistInstanceByIdResponse>($"/api/checklist-instances/{instanceId}");
+        pendingDetail!.Status.Should().Be("Pending");
 
-        foreach (var taskExecution in pendingDetail!.TaskExecutions)
+        var isFirstAssignment = true;
+        foreach (var taskExecution in pendingDetail.TaskExecutions)
         {
             var assignResponse = await _client.PostAsJsonAsync(
                 $"/api/checklist-instances/{instanceId}/tasks/{taskExecution.Id}/assign",
-                new { UserId = _gerenciaUserId });
+                new { UserId = _gerenciaUserId, EstimatedDurationMinutes = 15 });
             assignResponse.StatusCode.Should().Be(HttpStatusCode.OK);
+
+            if (isFirstAssignment)
+            {
+                var afterFirstAssign = await _client.GetFromJsonAsync<GetChecklistInstanceByIdResponse>($"/api/checklist-instances/{instanceId}");
+                afterFirstAssign!.Status.Should().Be("InProgress", "la primera asignación arranca el checklist entero automáticamente");
+                isFirstAssignment = false;
+            }
         }
 
-        var approvedDetail = await _client.GetFromJsonAsync<GetChecklistInstanceByIdResponse>($"/api/checklist-instances/{instanceId}");
-        approvedDetail!.Status.Should().Be("Approved");
+        var inProgressDetail = await _client.GetFromJsonAsync<GetChecklistInstanceByIdResponse>($"/api/checklist-instances/{instanceId}");
 
-        var startResponse = await _client.PostAsync($"/api/checklist-instances/{instanceId}/start", null);
-        startResponse.StatusCode.Should().Be(HttpStatusCode.OK);
-        var started = await startResponse.Content.ReadFromJsonAsync<StartChecklistInstanceResponse>();
-        started!.Status.Should().Be("InProgress");
-
-        var detail = await _client.GetFromJsonAsync<GetChecklistInstanceByIdResponse>($"/api/checklist-instances/{instanceId}");
-
-        foreach (var taskExecution in detail!.TaskExecutions)
+        foreach (var taskExecution in inProgressDetail!.TaskExecutions)
         {
+            var startTaskResponse = await _client.PostAsync($"/api/checklist-instances/{instanceId}/tasks/{taskExecution.Id}/start", null);
+            startTaskResponse.StatusCode.Should().Be(HttpStatusCode.OK);
+
             var completeResponse = await _client.PostAsJsonAsync(
                 $"/api/checklist-instances/{instanceId}/tasks/{taskExecution.Id}/complete",
-                new { Completed = true, Comment = (string?)null });
+                new { Comment = (string?)null });
             completeResponse.StatusCode.Should().Be(HttpStatusCode.OK);
+
+            var reviewResponse = await _client.PostAsync($"/api/checklist-instances/{instanceId}/tasks/{taskExecution.Id}/review", null);
+            reviewResponse.StatusCode.Should().Be(HttpStatusCode.OK);
         }
 
         var finishResponse = await _client.PostAsync($"/api/checklist-instances/{instanceId}/finish", null);
@@ -116,10 +121,5 @@ public class ChecklistLifecycleTests : IClassFixture<CustomWebApplicationFactory
         var finished = await finishResponse.Content.ReadFromJsonAsync<FinishChecklistInstanceResponse>();
         finished!.Status.Should().Be("Completed");
         finished.DurationSeconds.Should().BeGreaterThanOrEqualTo(0);
-
-        var approveResponse = await _client.PostAsync($"/api/checklist-instances/{instanceId}/approve", null);
-        approveResponse.StatusCode.Should().Be(HttpStatusCode.OK);
-        var approved = await approveResponse.Content.ReadFromJsonAsync<ApproveChecklistInstanceResponse>();
-        approved!.Status.Should().Be("Reviewed");
     }
 }

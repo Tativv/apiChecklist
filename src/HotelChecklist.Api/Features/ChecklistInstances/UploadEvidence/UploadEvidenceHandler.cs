@@ -14,20 +14,20 @@ public sealed class UploadEvidenceHandler(AppDbContext db, IFileStorage fileStor
 
     public async Task<Result<UploadEvidenceResponse>> Handle(UploadEvidenceCommand command, CancellationToken cancellationToken)
     {
-        var instance = await db.ChecklistInstances.FindAsync([command.InstanceId], cancellationToken);
+        var instanceExists = await db.ChecklistInstances.AnyAsync(i => i.Id == command.InstanceId, cancellationToken);
 
-        if (instance is null)
+        if (!instanceExists)
             return Result.Failure<UploadEvidenceResponse>(Error.NotFound("ChecklistInstances.NotFound", "Checklist no encontrado."));
 
-        if (instance.Status != ChecklistStatus.InProgress)
-            return Result.Failure<UploadEvidenceResponse>(
-                Error.Conflict("ChecklistInstances.InvalidTransition", "Solo se pueden subir evidencias en un checklist en progreso."));
+        var taskExecution = await db.ChecklistTaskExecutions
+            .FirstOrDefaultAsync(e => e.Id == command.TaskExecutionId && e.ChecklistInstanceId == command.InstanceId, cancellationToken);
 
-        var taskExecutionExists = await db.ChecklistTaskExecutions
-            .AnyAsync(e => e.Id == command.TaskExecutionId && e.ChecklistInstanceId == command.InstanceId, cancellationToken);
-
-        if (!taskExecutionExists)
+        if (taskExecution is null)
             return Result.Failure<UploadEvidenceResponse>(Error.NotFound("ChecklistTaskExecutions.NotFound", "Tarea no encontrada."));
+
+        if (taskExecution.Status != TaskExecutionStatus.InProgress)
+            return Result.Failure<UploadEvidenceResponse>(
+                Error.Conflict("ChecklistTaskExecutions.InvalidTransition", "Solo se pueden subir evidencias en una tarea en andamento."));
 
         if (!AllowedContentTypes.Contains(command.ContentType))
             return Result.Failure<UploadEvidenceResponse>(

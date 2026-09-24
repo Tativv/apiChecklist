@@ -72,7 +72,7 @@ public class UpdateChecklistTemplateHandlerTests
             TemplateId = template.Id,
             AssetId = Guid.NewGuid(),
             Date = Yesterday,
-            Status = ChecklistStatus.Reviewed
+            Status = ChecklistStatus.Completed
         };
         db.ChecklistInstances.Add(pastInstance);
         db.ChecklistTaskExecutions.Add(new ChecklistTaskExecution
@@ -188,7 +188,7 @@ public class UpdateChecklistTemplateHandlerTests
             TemplateId = template.Id,
             AssetId = Guid.NewGuid(),
             Date = Yesterday,
-            Status = ChecklistStatus.Reviewed
+            Status = ChecklistStatus.Completed
         };
         db.ChecklistInstances.Add(pastInstance);
         db.ChecklistTaskExecutions.Add(new ChecklistTaskExecution

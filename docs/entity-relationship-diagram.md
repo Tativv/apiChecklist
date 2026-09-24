@@ -188,9 +188,9 @@ erDiagram
         uuid template_id FK
         uuid asset_id FK
         date date
-        enum status "Pending | Approved | InProgress | Completed | Reviewed"
-        timestamptz started_at
-        timestamptz completed_at
+        enum status "Pending | InProgress | Completed"
+        timestamptz started_at "se setea solo con la 1ª asignación de tarea"
+        timestamptz completed_at "solo vía Finish, Supervisor+"
         long duration_seconds
     }
 
@@ -200,13 +200,16 @@ erDiagram
         uuid task_id FK
         uuid schedule_id FK "nullable, SET NULL"
         timestamptz scheduled_for_utc "nullable"
-        timestamptz executed_at_utc "nullable"
-        enum status "Pending | Completed | Skipped"
+        int estimated_duration_minutes "nullable, se completa al asignar"
+        timestamptz started_at "nullable"
+        timestamptz completed_at "nullable — antes se llamaba executed_at_utc"
+        long duration_seconds "nullable, completed_at - started_at"
+        enum status "Pending | InProgress | Completed | Reviewed"
         string comment
         uuid assigned_user_id FK "nullable — colaborador responsable"
         uuid created_by_user_id FK "nullable — supervisor que asignó"
         uuid executed_by_user_id FK "nullable — quien completó"
-        uuid approved_by_user_id FK "nullable — quien aprobó"
+        uuid approved_by_user_id FK "nullable — supervisor que revisó"
         timestamptz approved_at "nullable"
     }
 
@@ -238,6 +241,35 @@ erDiagram
 
 ## Notas de diseño
 
+- **El ciclo de vida de `ChecklistInstance`/`ChecklistTaskExecution` se simplificó y se partió en
+  dos niveles independientes**: la instancia ya no tiene `Approved` ni `Reviewed` — solo
+  `Pending → InProgress → Completed` — y esos dos estados desaparecidos se movieron, en la forma
+  de una revisión, al nivel de **cada tarea**: `Pending → InProgress → Completed → Reviewed`.
+  - La instancia **nunca se "inicia" manualmente**: la primera vez que se asigna cualquiera de sus
+    tareas (`AssignTask` con `UserId` no nulo mientras la instancia está `Pending`), pasa sola a
+    `InProgress` y graba `started_at`. Desasignar no la hace retroceder.
+  - Cada tarea tiene su propio ciclo operado por el colaborador asignado (o Supervisor+ en su
+    lugar): `StartTask` (`Pending → InProgress`, graba `started_at`) y `CompleteTask`
+    (`InProgress → Completed`, graba `completed_at` y `duration_seconds = completed_at -
+    started_at`). Ya no existe el toggle "completar/descompletar" que tenía antes ni el estado
+    `Skipped` — todas las tareas tienen que llegar a `Completed` (o `Reviewed`) para poder concluir
+    el checklist, sin atajos.
+  - **`ReviewTask` (`Completed → Reviewed`) es exclusivo de Supervisor+**, nunca del colaborador
+    asignado — reusa las columnas `approved_by_user_id`/`approved_at` que antes se llenaban en
+    bloque sobre todas las tareas al aprobar la instancia entera; ahora se llenan una tarea a la
+    vez.
+  - **`FinishChecklistInstance` (`InProgress → Completed`) es exclusivo de Supervisor+** (antes
+    también lo podía hacer un colaborador con una tarea asignada) y exige que **ninguna** tarea
+    esté en `Pending`/`InProgress` — `Completed` y `Reviewed` cuentan igual como "concluida".
+  - **`ReopenChecklistInstance` (Supervisor+) vuelve todo al estado inicial de verdad**: la
+    instancia a `Pending` sin `started_at`/`completed_at`/`duration_seconds`, y cada tarea pierde
+    asignación, horarios, comentario, revisión **y sus evidencias subidas** (se borran los archivos
+    del storage además de las filas) — no es un simple "retroceder un paso" como antes.
+  - `EstimatedDurationMinutes` es un campo nuevo por tarea, opcional, que se completa en el momento
+    de asignar (`AssignTask`) — no está en el template, es específico de cada ejecución puntual.
+  - Migración de datos existentes: `Approved→InProgress` y `Reviewed→Completed` a nivel instancia,
+    `Skipped→Pending` a nivel tarea; la columna `executed_at_utc` (que ya guardaba la fecha de
+    completado) se renombró a `completed_at` en vez de perder ese dato.
 - **`ChecklistTemplate.CreatedByRole` impone jerarquía de edición, `ChecklistInstance` no**: cada
   template graba el rol de quien lo creó (fijo desde la creación, no se recalcula si ese usuario
   cambia de rol después). `Update`, `Delete` y `ConfigureAssets` rechazan con 403

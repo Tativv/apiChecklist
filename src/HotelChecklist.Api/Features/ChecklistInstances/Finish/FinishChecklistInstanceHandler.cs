@@ -21,15 +21,9 @@ public sealed class FinishChecklistInstanceHandler(AppDbContext db) : ICommandHa
             return Result.Failure<FinishChecklistInstanceResponse>(
                 Error.Conflict("ChecklistInstances.InvalidTransition", $"No se puede finalizar un checklist en estado {instance.Status}."));
 
-        var hasAssignedTask = instance.TaskExecutions.Any(e => e.AssignedUserId == command.ActingUserId);
-
-        if (!command.ActingUserIsSupervisorOrAbove && !hasAssignedTask)
+        if (instance.TaskExecutions.Any(e => e.Status is TaskExecutionStatus.Pending or TaskExecutionStatus.InProgress))
             return Result.Failure<FinishChecklistInstanceResponse>(
-                Error.Forbidden("ChecklistInstances.NotAssigned", "Solo un colaborador con una tarea asignada acá o un supervisor pueden finalizar este checklist."));
-
-        if (instance.TaskExecutions.Any(e => e.Status == TaskExecutionStatus.Pending))
-            return Result.Failure<FinishChecklistInstanceResponse>(
-                Error.Validation("ChecklistInstances.PendingTasks", "Todas las tareas deben estar completadas antes de finalizar."));
+                Error.Validation("ChecklistInstances.PendingTasks", "Todas las tareas deben estar concluidas antes de finalizar."));
 
         instance.CompletedAt = DateTimeOffset.UtcNow;
         instance.DurationSeconds = (long)(instance.CompletedAt.Value - instance.StartedAt!.Value).TotalSeconds;
