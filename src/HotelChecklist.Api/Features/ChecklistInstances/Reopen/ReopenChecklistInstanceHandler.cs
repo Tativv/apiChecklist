@@ -13,7 +13,7 @@ public sealed class ReopenChecklistInstanceHandler(AppDbContext db, IFileStorage
     public async Task<Result<ReopenChecklistInstanceResponse>> Handle(ReopenChecklistInstanceCommand command, CancellationToken cancellationToken)
     {
         var instance = await db.ChecklistInstances
-            .Include(i => i.TaskExecutions).ThenInclude(e => e.Evidences)
+            .Include(i => i.TaskExecutions).ThenInclude(e => e.Comments)
             .FirstOrDefaultAsync(i => i.Id == command.Id, cancellationToken);
 
         if (instance is null)
@@ -28,12 +28,12 @@ public sealed class ReopenChecklistInstanceHandler(AppDbContext db, IFileStorage
         instance.CompletedAt = null;
         instance.DurationSeconds = null;
 
-        var evidences = instance.TaskExecutions.SelectMany(e => e.Evidences).ToList();
+        var comments = instance.TaskExecutions.SelectMany(e => e.Comments).ToList();
 
-        foreach (var evidence in evidences)
-            await fileStorage.DeleteAsync(evidence.FilePath, cancellationToken);
+        foreach (var comment in comments.Where(c => c.FilePath is not null))
+            await fileStorage.DeleteAsync(comment.FilePath!, cancellationToken);
 
-        db.ChecklistTaskEvidences.RemoveRange(evidences);
+        db.ChecklistTaskComments.RemoveRange(comments);
 
         foreach (var execution in instance.TaskExecutions)
         {

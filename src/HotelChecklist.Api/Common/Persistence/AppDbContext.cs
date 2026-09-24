@@ -26,8 +26,6 @@ public sealed class AppDbContext(DbContextOptions<AppDbContext> options) : DbCon
 
     public DbSet<ChecklistTaskExecution> ChecklistTaskExecutions => Set<ChecklistTaskExecution>();
 
-    public DbSet<ChecklistTaskEvidence> ChecklistTaskEvidences => Set<ChecklistTaskEvidence>();
-
     public DbSet<ChecklistTaskComment> ChecklistTaskComments => Set<ChecklistTaskComment>();
 
     public DbSet<User> Users => Set<User>();

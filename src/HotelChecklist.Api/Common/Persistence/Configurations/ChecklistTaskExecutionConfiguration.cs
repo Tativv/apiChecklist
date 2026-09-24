@@ -47,10 +47,5 @@ public sealed class ChecklistTaskExecutionConfiguration : IEntityTypeConfigurati
             .WithMany()
             .HasForeignKey(e => e.ApprovedByUserId)
             .OnDelete(DeleteBehavior.Restrict);
-
-        builder.HasMany(e => e.Evidences)
-            .WithOne(ev => ev.ChecklistTaskExecution)
-            .HasForeignKey(ev => ev.ChecklistTaskExecutionId)
-            .OnDelete(DeleteBehavior.Cascade);
     }
 }

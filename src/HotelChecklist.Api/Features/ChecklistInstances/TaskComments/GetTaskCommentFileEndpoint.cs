@@ -2,18 +2,18 @@ using HotelChecklist.Api.Common.Auth;
 using HotelChecklist.Api.Common.Cqrs;
 using HotelChecklist.Api.Common.Errors;
 
-namespace HotelChecklist.Api.Features.ChecklistInstances.GetEvidenceFile;
+namespace HotelChecklist.Api.Features.ChecklistInstances.TaskComments;
 
-public static class GetEvidenceFileEndpoint
+public static class GetTaskCommentFileEndpoint
 {
-    public static void MapGetEvidenceFile(this RouteGroupBuilder group)
+    public static void MapGetTaskCommentFile(this RouteGroupBuilder group)
     {
-        group.MapGet("/evidence/{evidenceId:guid}", async (
-                Guid evidenceId,
-                IQueryHandler<GetEvidenceFileQuery, GetEvidenceFileResponse> handler,
+        group.MapGet("/comments/{commentId:guid}/file", async (
+                Guid commentId,
+                IQueryHandler<GetTaskCommentFileQuery, GetTaskCommentFileResponse> handler,
                 CancellationToken cancellationToken) =>
             {
-                var result = await handler.Handle(new GetEvidenceFileQuery(evidenceId), cancellationToken);
+                var result = await handler.Handle(new GetTaskCommentFileQuery(commentId), cancellationToken);
 
                 if (result.IsFailure)
                     return result.ToHttpResult();
@@ -21,7 +21,7 @@ public static class GetEvidenceFileEndpoint
                 return Microsoft.AspNetCore.Http.Results.File(result.Value.Content, result.Value.ContentType, result.Value.FileName);
             })
             .RequireAuthorization(Policies.AnyRole)
-            .WithName("GetEvidenceFile")
+            .WithName("GetTaskCommentFile")
             .ProducesProblem(StatusCodes.Status404NotFound);
     }
 }

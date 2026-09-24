@@ -1,5 +1,6 @@
 using HotelChecklist.Api.Common.Cqrs;
 using HotelChecklist.Api.Common.Persistence;
+using HotelChecklist.Api.Features.ChecklistInstances.TaskComments;
 using HotelChecklist.Domain.Common;
 using HotelChecklist.Domain.Enums;
 using Microsoft.EntityFrameworkCore;
@@ -27,6 +28,9 @@ public sealed class RestartTaskHandler(AppDbContext db) : ICommandHandler<Restar
         taskExecution.ExecutedByUserId = null;
         taskExecution.ApprovedByUserId = null;
         taskExecution.ApprovedAt = null;
+
+        var restartedAt = DateTimeOffset.UtcNow;
+        SystemTaskCommentLog.Add(db, taskExecution.Id, command.ActingUserId, "Tarefa reiniciada.", restartedAt);
 
         // Un checklist Completed no puede seguir así si una de sus tareas vuelve a Pending —
         // rompería la invariante que exige FinishChecklistInstance (todas concluidas/revisadas).

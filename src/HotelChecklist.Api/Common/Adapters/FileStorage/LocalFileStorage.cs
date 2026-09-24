@@ -29,7 +29,7 @@ public sealed class LocalFileStorage(IOptions<FileStorageOptions> options) : IFi
         var absolutePath = Path.Combine(_rootPath, filePath);
 
         if (!File.Exists(absolutePath))
-            throw new FileNotFoundException("Evidence file not found.", filePath);
+            throw new FileNotFoundException("File not found.", filePath);
 
         Stream stream = File.OpenRead(absolutePath);
         return Task.FromResult(stream);

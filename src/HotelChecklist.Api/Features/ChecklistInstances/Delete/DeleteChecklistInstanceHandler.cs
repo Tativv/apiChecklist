@@ -15,15 +15,15 @@ public sealed class DeleteChecklistInstanceHandler(AppDbContext db, IFileStorage
         if (instance is null)
             return Result.Failure<Unit>(Error.NotFound("ChecklistInstances.NotFound", "Checklist no encontrado."));
 
-        var evidenceFilePaths = await db.ChecklistTaskEvidences
-            .Where(e => e.ChecklistTaskExecution.ChecklistInstanceId == command.Id)
-            .Select(e => e.FilePath)
+        var commentFilePaths = await db.ChecklistTaskComments
+            .Where(c => c.ChecklistTaskExecution.ChecklistInstanceId == command.Id && c.FilePath != null)
+            .Select(c => c.FilePath!)
             .ToListAsync(cancellationToken);
 
         db.ChecklistInstances.Remove(instance);
         await db.SaveChangesAsync(cancellationToken);
 
-        foreach (var filePath in evidenceFilePaths)
+        foreach (var filePath in commentFilePaths)
             await fileStorage.DeleteAsync(filePath, cancellationToken);
 
         return Result.Success(Unit.Value);

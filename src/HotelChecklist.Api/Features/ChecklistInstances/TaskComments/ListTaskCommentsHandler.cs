@@ -18,7 +18,7 @@ public sealed class ListTaskCommentsHandler(AppDbContext db) : IQueryHandler<Lis
         var comments = await db.ChecklistTaskComments
             .Where(c => c.ChecklistTaskExecutionId == query.TaskExecutionId)
             .OrderBy(c => c.CreatedAt)
-            .Select(c => new TaskCommentResponseItem(c.Id, c.AuthorUserId, c.AuthorUser.Name, c.CreatedAt, c.Text))
+            .Select(c => new TaskCommentResponseItem(c.Id, c.AuthorUserId, c.AuthorUser.Name, c.CreatedAt, c.Text, c.FileName, c.ContentType))
             .ToListAsync(cancellationToken);
 
         return Result.Success<IReadOnlyList<TaskCommentResponseItem>>(comments);

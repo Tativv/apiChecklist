@@ -11,8 +11,16 @@ public sealed class ChecklistTaskCommentConfiguration : IEntityTypeConfiguration
         builder.HasKey(c => c.Id);
 
         builder.Property(c => c.Text)
-            .IsRequired()
             .HasMaxLength(2000);
+
+        builder.Property(c => c.FilePath)
+            .HasMaxLength(500);
+
+        builder.Property(c => c.FileName)
+            .HasMaxLength(300);
+
+        builder.Property(c => c.ContentType)
+            .HasMaxLength(100);
 
         builder.HasIndex(c => c.ChecklistTaskExecutionId);
 

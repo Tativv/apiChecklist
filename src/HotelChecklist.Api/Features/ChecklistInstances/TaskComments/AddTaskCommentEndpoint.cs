@@ -2,7 +2,7 @@ using System.Security.Claims;
 using HotelChecklist.Api.Common.Auth;
 using HotelChecklist.Api.Common.Cqrs;
 using HotelChecklist.Api.Common.Errors;
-using HotelChecklist.Api.Common.Validation;
+using Microsoft.AspNetCore.Mvc;
 
 namespace HotelChecklist.Api.Features.ChecklistInstances.TaskComments;
 
@@ -13,16 +13,22 @@ public static class AddTaskCommentEndpoint
         group.MapPost("/{instanceId:guid}/tasks/{taskExecutionId:guid}/comments", async (
                 Guid instanceId,
                 Guid taskExecutionId,
-                AddTaskCommentRequest request,
+                [FromForm] string? text,
+                IFormFile? file,
                 ClaimsPrincipal user,
                 ICommandHandler<AddTaskCommentCommand, TaskCommentResponseItem> handler,
                 CancellationToken cancellationToken) =>
             {
-                var command = request.ToCommand(instanceId, taskExecutionId, user.GetUserId());
+                await using var content = file?.OpenReadStream();
+
+                var command = new AddTaskCommentCommand(
+                    instanceId, taskExecutionId, text, user.GetUserId(),
+                    content, file?.FileName, file?.ContentType, file?.Length);
+
                 var result = await handler.Handle(command, cancellationToken);
                 return result.ToHttpResult(StatusCodes.Status201Created);
             })
-            .AddEndpointFilter<ValidationFilter<AddTaskCommentRequest>>()
+            .DisableAntiforgery()
             .RequireAuthorization(Policies.AnyRole)
             .WithName("AddTaskComment")
             .Produces<TaskCommentResponseItem>(StatusCodes.Status201Created)

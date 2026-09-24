@@ -1,5 +1,6 @@
 using HotelChecklist.Api.Common.Cqrs;
 using HotelChecklist.Api.Common.Persistence;
+using HotelChecklist.Api.Features.ChecklistInstances.TaskComments;
 using HotelChecklist.Domain.Common;
 using HotelChecklist.Domain.Enums;
 using Microsoft.EntityFrameworkCore;
@@ -42,6 +43,8 @@ public sealed class CompleteChecklistTaskHandler(AppDbContext db) : ICommandHand
             : (long)(taskExecution.CompletedAt.Value - taskExecution.StartedAt.Value).TotalSeconds;
         taskExecution.ExecutedByUserId = command.ActingUserId;
         taskExecution.Comment = command.Comment;
+
+        SystemTaskCommentLog.Add(db, taskExecution.Id, command.ActingUserId, "Tarefa concluída.", taskExecution.CompletedAt.Value);
 
         await db.SaveChangesAsync(cancellationToken);
 

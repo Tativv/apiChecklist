@@ -56,7 +56,7 @@ public class RestartTaskHandlerTests
         await db.SaveChangesAsync();
 
         var handler = new RestartTaskHandler(db);
-        var result = await handler.Handle(new RestartTaskCommand(instance.Id, task.Id), CancellationToken.None);
+        var result = await handler.Handle(new RestartTaskCommand(instance.Id, task.Id, Guid.NewGuid()), CancellationToken.None);
 
         result.IsSuccess.Should().BeTrue(result.IsFailure ? $"{result.Error.Code}: {result.Error.Message}" : "");
         var reloaded = await db.ChecklistTaskExecutions.FindAsync(task.Id);
@@ -77,7 +77,7 @@ public class RestartTaskHandlerTests
         await db.SaveChangesAsync();
 
         var handler = new RestartTaskHandler(db);
-        await handler.Handle(new RestartTaskCommand(instance.Id, task.Id), CancellationToken.None);
+        await handler.Handle(new RestartTaskCommand(instance.Id, task.Id, Guid.NewGuid()), CancellationToken.None);
 
         var reloadedInstance = await db.ChecklistInstances.FindAsync(instance.Id);
         reloadedInstance!.Status.Should().Be(ChecklistStatus.InProgress);
@@ -95,7 +95,7 @@ public class RestartTaskHandlerTests
         await db.SaveChangesAsync();
 
         var handler = new RestartTaskHandler(db);
-        var result = await handler.Handle(new RestartTaskCommand(instance.Id, task.Id), CancellationToken.None);
+        var result = await handler.Handle(new RestartTaskCommand(instance.Id, task.Id, Guid.NewGuid()), CancellationToken.None);
 
         result.IsFailure.Should().BeTrue();
         result.Error.Type.Should().Be(ErrorType.Conflict);

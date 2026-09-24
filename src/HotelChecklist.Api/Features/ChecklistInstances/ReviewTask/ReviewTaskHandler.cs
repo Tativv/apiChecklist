@@ -1,5 +1,6 @@
 using HotelChecklist.Api.Common.Cqrs;
 using HotelChecklist.Api.Common.Persistence;
+using HotelChecklist.Api.Features.ChecklistInstances.TaskComments;
 using HotelChecklist.Domain.Common;
 using HotelChecklist.Domain.Enums;
 using Microsoft.EntityFrameworkCore;
@@ -23,6 +24,8 @@ public sealed class ReviewTaskHandler(AppDbContext db) : ICommandHandler<ReviewT
         taskExecution.Status = TaskExecutionStatus.Reviewed;
         taskExecution.ApprovedByUserId = command.ActingUserId;
         taskExecution.ApprovedAt = DateTimeOffset.UtcNow;
+
+        SystemTaskCommentLog.Add(db, taskExecution.Id, command.ActingUserId, "Tarefa revisada.", taskExecution.ApprovedAt.Value);
 
         await db.SaveChangesAsync(cancellationToken);
 

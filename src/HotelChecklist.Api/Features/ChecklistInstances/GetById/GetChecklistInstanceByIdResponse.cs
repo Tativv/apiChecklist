@@ -30,5 +30,4 @@ public sealed record TaskExecutionResponseItem(
     Guid? ExecutedByUserId,
     Guid? ApprovedByUserId,
     DateTimeOffset? ApprovedAt,
-    int EvidenceCount,
     int CommentCount);

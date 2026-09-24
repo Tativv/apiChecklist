@@ -92,14 +92,12 @@ erDiagram
 
     CHECKLIST_INSTANCE ||--o{ CHECKLIST_TASK_EXECUTION : contiene
 
-    CHECKLIST_TASK_EXECUTION ||--o{ CHECKLIST_TASK_EVIDENCE : adjunta
     CHECKLIST_TASK_EXECUTION ||--o{ CHECKLIST_TASK_COMMENT : tiene
     CHECKLIST_TASK_EXECUTION }o--o| USER : "asignada a"
     CHECKLIST_TASK_EXECUTION }o--o| USER : "asignada por"
     CHECKLIST_TASK_EXECUTION }o--o| USER : "ejecutada por"
     CHECKLIST_TASK_EXECUTION }o--o| USER : "aprobada por"
 
-    CHECKLIST_TASK_EVIDENCE }o--|| USER : "subido por"
     CHECKLIST_TASK_COMMENT }o--|| USER : "escrito por"
 
     AREA ||--o{ CALL : "destino de"
@@ -214,23 +212,16 @@ erDiagram
         timestamptz approved_at "nullable"
     }
 
-    CHECKLIST_TASK_EVIDENCE {
-        uuid id PK
-        uuid checklist_task_execution_id FK
-        string file_path
-        string file_name
-        string content_type
-        long file_size_bytes
-        timestamptz uploaded_at
-        uuid uploaded_by_user_id FK
-    }
-
     CHECKLIST_TASK_COMMENT {
         uuid id PK
         uuid checklist_task_execution_id FK
-        string text "max 2000 caracteres"
+        string text "nullable, max 2000 caracteres — puede ser solo un archivo"
         timestamptz created_at
         uuid author_user_id FK
+        string file_path "nullable"
+        string file_name "nullable"
+        string content_type "nullable"
+        long file_size_bytes "nullable"
     }
 
     CALL {
@@ -272,8 +263,9 @@ erDiagram
     esté en `Pending`/`InProgress` — `Completed` y `Reviewed` cuentan igual como "concluida".
   - **`ReopenChecklistInstance` (Supervisor+) vuelve todo al estado inicial de verdad**: la
     instancia a `Pending` sin `started_at`/`completed_at`/`duration_seconds`, y cada tarea pierde
-    asignación, horarios, comentario, revisión **y sus evidencias subidas** (se borran los archivos
-    del storage además de las filas) — no es un simple "retroceder un paso" como antes.
+    asignación, horarios, comentario, revisión **y todos sus `ChecklistTaskComment`** (incluidos
+    los archivos adjuntos, que se borran del storage además de las filas) — no es un simple
+    "retroceder un paso" como antes.
   - `ChecklistTask.EstimatedDurationMinutes` (opcional) se define al crear/editar la tarea dentro
     del template, no al asignarla ni en la lista de tareas de la instancia — `AssignTask` ya no
     recibe ni guarda una duración propia; `GetChecklistInstanceById` la proyecta desde
@@ -283,15 +275,23 @@ erDiagram
   - **`RestartTask`** (Supervisor+, `Completed`/`Reviewed` → `Pending`) permite reabrir una tarea
     puntual sin reabrir todo el checklist: limpia `started_at`/`completed_at`/`duration_seconds`,
     `executed_by_user_id` y la revisión (`approved_by_user_id`/`approved_at`), pero **conserva**
-    `assigned_user_id`, `comment` y las evidencias — a diferencia de `ReopenChecklistInstance`, que
-    limpia todo. Si el checklist ya estaba `Completed`, vuelve a `InProgress` y se le borran
-    `completed_at`/`duration_seconds` (una tarea `Pending` no puede convivir con un checklist
-    `Completed`, que exige todas las tareas concluidas/revisadas).
-  - **`ChecklistTaskComment`**: historial de comentarios libres por tarea (no reemplaza al campo
-    `Comment` de `ChecklistTaskExecution`, que es una nota puntual asociada a la ejecución
-    concreta) — cualquier usuario autenticado puede listarlos o agregar uno nuevo vía
-    `POST/GET .../tasks/{id}/comments`, sin restricción de asignación ni de estado de la tarea.
-    `GetChecklistInstanceById` expone `CommentCount` por tarea, igual que `EvidenceCount`.
+    `assigned_user_id`, `comment` y todos los `ChecklistTaskComment` existentes — a diferencia de
+    `ReopenChecklistInstance`, que limpia todo. Si el checklist ya estaba `Completed`, vuelve a
+    `InProgress` y se le borran `completed_at`/`duration_seconds` (una tarea `Pending` no puede
+    convivir con un checklist `Completed`, que exige todas las tareas concluidas/revisadas).
+  - **`ChecklistTaskComment` absorbió lo que antes era `ChecklistTaskEvidence`**: un comentario
+    puede llevar `Text`, un archivo adjunto (`FilePath`/`FileName`/`ContentType`/`FileSizeBytes`,
+    mismas reglas de tipos permitidos que tenía la evidencia — jpeg/png/webp/heic) o ambos; ya no
+    existe una entidad de evidencia separada. `POST .../tasks/{id}/comments` es `multipart/form-
+    data` (campo `text` opcional + `file` opcional, al menos uno de los dos); el archivo se sirve
+    vía `GET .../comments/{commentId}/file`. Cualquier usuario autenticado puede listar o agregar
+    comentarios, sin restricción de asignación ni de estado de la tarea.
+  - **Cada cambio de `TaskExecutionStatus` (`StartTask`, `CompleteTask`, `ReviewTask`,
+    `RestartTask`) inserta automáticamente un `ChecklistTaskComment` de sistema** ("Tarefa
+    iniciada.", "concluída.", "revisada.", "reiniciada.") con el usuario que actuó como autor —
+    queda como parte del mismo historial que los comentarios manuales, sirviendo de auditoría
+    visible sin una tabla de log aparte. `GetChecklistInstanceById` expone `CommentCount` por
+    tarea (ya no `EvidenceCount`).
   - `DashboardResponse` suma estadísticas por **tarea** (`TasksTotal/Pending/InProgress/Completed/
     Reviewed/Overdue`, `AverageTaskDurationSeconds`) además de las ya existentes por checklist —
     mismo filtro `FromDate`/`ToDate` sobre `ChecklistTaskExecution.ChecklistInstance.Date`.

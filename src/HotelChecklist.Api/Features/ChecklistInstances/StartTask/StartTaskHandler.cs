@@ -1,5 +1,6 @@
 using HotelChecklist.Api.Common.Cqrs;
 using HotelChecklist.Api.Common.Persistence;
+using HotelChecklist.Api.Features.ChecklistInstances.TaskComments;
 using HotelChecklist.Domain.Common;
 using HotelChecklist.Domain.Enums;
 using Microsoft.EntityFrameworkCore;
@@ -28,6 +29,8 @@ public sealed class StartTaskHandler(AppDbContext db) : ICommandHandler<StartTas
 
         taskExecution.Status = TaskExecutionStatus.InProgress;
         taskExecution.StartedAt = DateTimeOffset.UtcNow;
+
+        SystemTaskCommentLog.Add(db, taskExecution.Id, command.ActingUserId, "Tarefa iniciada.", taskExecution.StartedAt.Value);
 
         await db.SaveChangesAsync(cancellationToken);
 
