@@ -138,7 +138,6 @@ erDiagram
         string name
         string description
         uuid area_id FK
-        int estimated_duration_minutes
         string execution_mode "Scheduled u Continuous — igual que ChecklistTask"
         string created_by_role "Supervisor | Gerencia | Directoria — fijo desde la creación"
     }
@@ -268,9 +267,9 @@ erDiagram
   - `ChecklistTask.EstimatedDurationMinutes` (opcional) se define al crear/editar la tarea dentro
     del template, no al asignarla ni en la lista de tareas de la instancia — `AssignTask` ya no
     recibe ni guarda una duración propia; `GetChecklistInstanceById` la proyecta desde
-    `Task.EstimatedDurationMinutes` para mostrarla de solo lectura junto a cada ejecución. Es
-    distinto de `ChecklistTemplate.EstimatedDurationMinutes` (duración estimada del checklist
-    completo, ya existente).
+    `Task.EstimatedDurationMinutes` para mostrarla de solo lectura junto a cada ejecución.
+    `ChecklistTemplate.EstimatedDurationMinutes` (duración del checklist completo) se eliminó por
+    no ser necesaria: la duración ahora vive únicamente a nivel de cada tarea.
   - `DashboardResponse` suma estadísticas por **tarea** (`TasksTotal/Pending/InProgress/Completed/
     Reviewed/Overdue`, `AverageTaskDurationSeconds`) además de las ya existentes por checklist —
     mismo filtro `FromDate`/`ToDate` sobre `ChecklistTaskExecution.ChecklistInstance.Date`.

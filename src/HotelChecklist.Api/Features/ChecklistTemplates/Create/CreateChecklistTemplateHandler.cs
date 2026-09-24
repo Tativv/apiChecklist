@@ -26,7 +26,6 @@ public sealed class CreateChecklistTemplateHandler(AppDbContext db) : ICommandHa
             Name = command.Name,
             Description = command.Description,
             AreaId = command.AreaId,
-            EstimatedDurationMinutes = command.EstimatedDurationMinutes,
             ExecutionMode = Enum.Parse<TaskExecutionMode>(command.ExecutionMode, ignoreCase: true),
             CreatedByRole = command.ActingUserRole,
             TemplateSchedules = command.Schedules

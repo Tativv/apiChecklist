@@ -21,8 +21,8 @@ public class ListChecklistTemplatesHandlerTests
         var groupId = Guid.NewGuid();
 
         db.ChecklistTemplates.AddRange(
-            new ChecklistTemplate { Id = groupId, GroupId = groupId, IsSnapshot = true, Name = "Vieja", AreaId = areaId, EstimatedDurationMinutes = 10 },
-            new ChecklistTemplate { Id = Guid.NewGuid(), GroupId = groupId, IsSnapshot = false, Name = "Viva", AreaId = areaId, EstimatedDurationMinutes = 10 });
+            new ChecklistTemplate { Id = groupId, GroupId = groupId, IsSnapshot = true, Name = "Vieja", AreaId = areaId },
+            new ChecklistTemplate { Id = Guid.NewGuid(), GroupId = groupId, IsSnapshot = false, Name = "Viva", AreaId = areaId });
         await db.SaveChangesAsync();
 
         var handler = new ListChecklistTemplatesHandler(db);

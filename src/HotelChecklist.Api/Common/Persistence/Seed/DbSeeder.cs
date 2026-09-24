@@ -102,7 +102,6 @@ public static class DbSeeder
             Name = "Checklist diario de habitación",
             Description = "Revisión estándar diaria de limpieza y mantenimiento de habitación.",
             AreaId = roomsArea.Id,
-            EstimatedDurationMinutes = 30,
             TemplateSchedules = [new TemplateSchedule { Id = Guid.NewGuid(), Schedule = DailyAt(8, 0) }],
             Tasks =
             [

@@ -9,7 +9,6 @@ public static class GetChecklistTemplateByIdMapping
         template.Name,
         template.Description,
         template.AreaId,
-        template.EstimatedDurationMinutes,
         template.ExecutionMode.ToString(),
         template.CreatedByRole.ToString(),
         template.TemplateSchedules.OrderBy(ts => ts.Schedule.ExecutionOrder).Select(ts => ts.Schedule.ToResponseItem()).ToList(),

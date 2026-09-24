@@ -57,7 +57,6 @@ public class ChecklistLifecycleTests : IClassFixture<CustomWebApplicationFactory
             "Checklist diario",
             "Revisión diaria",
             area.Id,
-            30,
             "Scheduled",
             [dailySchedule],
             [

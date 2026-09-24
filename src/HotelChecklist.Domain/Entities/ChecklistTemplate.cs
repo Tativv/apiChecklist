@@ -21,8 +21,6 @@ public sealed class ChecklistTemplate : IAuditable
 
     public Guid AreaId { get; set; }
 
-    public int EstimatedDurationMinutes { get; set; }
-
     public DateTimeOffset CreatedAtUtc { get; set; }
 
     public DateTimeOffset UpdatedAtUtc { get; set; }

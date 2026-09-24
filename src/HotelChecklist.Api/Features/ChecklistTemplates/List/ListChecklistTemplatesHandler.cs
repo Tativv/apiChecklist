@@ -20,7 +20,6 @@ public sealed class ListChecklistTemplatesHandler(AppDbContext db) : IQueryHandl
                 t.Id,
                 t.Name,
                 t.AreaId,
-                t.EstimatedDurationMinutes,
                 t.TemplateSchedules.Count,
                 t.Tasks.Count,
                 t.TemplateAssets.Count,

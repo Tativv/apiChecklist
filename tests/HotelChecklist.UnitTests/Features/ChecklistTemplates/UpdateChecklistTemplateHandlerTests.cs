@@ -36,7 +36,6 @@ public class UpdateChecklistTemplateHandlerTests
             IsSnapshot = false,
             Name = "Original",
             AreaId = areaId,
-            EstimatedDurationMinutes = 15,
             CreatedByRole = createdByRole,
             Tasks = [new ChecklistTaskRequest("Tarea 1", null, 1, null, "Continuous", []).ToTask()]
         };
@@ -48,7 +47,6 @@ public class UpdateChecklistTemplateHandlerTests
         name,
         "desc",
         areaId,
-        20,
         "Scheduled",
         [DailySchedule],
         [new ChecklistTaskRequest(taskName, null, 1, null, "Continuous", [])],

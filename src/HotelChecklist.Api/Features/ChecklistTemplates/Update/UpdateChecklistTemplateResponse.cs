@@ -5,7 +5,6 @@ public sealed record UpdateChecklistTemplateResponse(
     string Name,
     string? Description,
     Guid AreaId,
-    int EstimatedDurationMinutes,
     string ExecutionMode,
     string CreatedByRole,
     List<ScheduleResponseItem> Schedules,

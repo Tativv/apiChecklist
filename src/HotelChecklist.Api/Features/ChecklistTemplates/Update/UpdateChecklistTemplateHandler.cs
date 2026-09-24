@@ -45,7 +45,6 @@ public sealed class UpdateChecklistTemplateHandler(AppDbContext db) : ICommandHa
             template.Name = command.Name;
             template.Description = command.Description;
             template.AreaId = command.AreaId;
-            template.EstimatedDurationMinutes = command.EstimatedDurationMinutes;
             template.ExecutionMode = Enum.Parse<TaskExecutionMode>(command.ExecutionMode, ignoreCase: true);
 
             db.TemplateSchedules.RemoveRange(template.TemplateSchedules);
@@ -85,7 +84,6 @@ public sealed class UpdateChecklistTemplateHandler(AppDbContext db) : ICommandHa
             template.Name = command.Name;
             template.Description = command.Description;
             template.AreaId = command.AreaId;
-            template.EstimatedDurationMinutes = command.EstimatedDurationMinutes;
             template.ExecutionMode = Enum.Parse<TaskExecutionMode>(command.ExecutionMode, ignoreCase: true);
 
             // Reemplazo vía RemoveRange/AddRange sobre el DbSet en vez de Clear()+Add() sobre la
@@ -134,7 +132,6 @@ public sealed class UpdateChecklistTemplateHandler(AppDbContext db) : ICommandHa
             Name = command.Name,
             Description = command.Description,
             AreaId = command.AreaId,
-            EstimatedDurationMinutes = command.EstimatedDurationMinutes,
             ExecutionMode = Enum.Parse<TaskExecutionMode>(command.ExecutionMode, ignoreCase: true),
             CreatedByRole = command.ActingUserRole,
             TemplateSchedules = command.Schedules

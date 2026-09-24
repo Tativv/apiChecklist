@@ -4,7 +4,6 @@ public sealed record ListChecklistTemplatesResponseItem(
     Guid Id,
     string Name,
     Guid AreaId,
-    int EstimatedDurationMinutes,
     int ScheduleCount,
     int TaskCount,
     int AssetCount,

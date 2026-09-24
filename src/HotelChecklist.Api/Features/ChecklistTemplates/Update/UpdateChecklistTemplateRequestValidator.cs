@@ -10,7 +10,6 @@ public sealed class UpdateChecklistTemplateRequestValidator : AbstractValidator<
         RuleFor(r => r.Name).NotEmpty().MaximumLength(200);
         RuleFor(r => r.Description).MaximumLength(1000);
         RuleFor(r => r.AreaId).NotEmpty();
-        RuleFor(r => r.EstimatedDurationMinutes).GreaterThan(0);
 
         RuleFor(r => r.ExecutionMode)
             .NotEmpty()
