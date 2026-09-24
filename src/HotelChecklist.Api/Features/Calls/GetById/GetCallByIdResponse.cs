@@ -15,4 +15,5 @@ public sealed record GetCallByIdResponse(
     DateTimeOffset? StartedAt,
     DateTimeOffset? CompletedAt,
     long? DurationSeconds,
-    DateTimeOffset CreatedAtUtc);
+    DateTimeOffset CreatedAtUtc,
+    int CommentCount);

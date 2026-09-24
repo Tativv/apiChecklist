@@ -103,6 +103,8 @@ erDiagram
     AREA ||--o{ CALL : "destino de"
     CALL }o--|| USER : "abierto por"
     CALL }o--o| USER : "asignado a"
+    CALL ||--o{ CALL_COMMENT : tiene
+    CALL_COMMENT }o--|| USER : "escrito por"
 
     AREA {
         uuid id PK
@@ -237,6 +239,18 @@ erDiagram
         timestamptz completed_at "nullable"
         long duration_seconds "nullable"
     }
+
+    CALL_COMMENT {
+        uuid id PK
+        uuid call_id FK
+        string text "nullable, max 2000 caracteres — puede ser solo un archivo"
+        timestamptz created_at
+        uuid author_user_id FK
+        string file_path "nullable"
+        string file_name "nullable"
+        string content_type "nullable"
+        long file_size_bytes "nullable"
+    }
 ```
 
 ## Notas de diseño
@@ -346,6 +360,14 @@ erDiagram
     Se ordena con una expresión `Alta→2 | Media→1 | Baixa→0` que EF traduce a un `CASE` en SQL,
     y como desempate `ThenBy(CreatedAtUtc)` (más antiguo primero, FIFO dentro de la misma
     prioridad).
+  - **`CallComment` replica exactamente el patrón de `ChecklistTaskComment`**: mismo shape (texto
+    opcional + archivo opcional, `multipart/form-data`, tipos de imagen permitidos idénticos,
+    servido vía `GET /api/calls/comments/{commentId}/file`), y `Assign`/`Start`/`Finish` insertan
+    cada uno su comentario de sistema ("Chamado designado a {nome}."/"desdesignado.", "Chamado
+    iniciado.", "Chamado concluído."). A diferencia de las tareas, no hay estado `Reviewed` para
+    un chamado, así que `AddCallComment` no tiene ningún bloqueo de estado — cualquier usuario
+    autenticado puede comentar en cualquier momento del ciclo de vida. `ListCalls`/`GetCallById`
+    exponen `CommentCount`.
 - **`ChecklistTemplate` versiona por copy-on-write en vez de mutar con historial**: `Update`
   separa los campos por si tocan o no `ChecklistTask`/`ChecklistTaskExecution` (FK `Restrict`):
   - **Nombre/descripción/área/duración/horarios del template**: nunca tocan `ChecklistTask`, así

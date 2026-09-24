@@ -55,7 +55,7 @@ public sealed class ListCallsHandler(AppDbContext db) : IQueryHandler<ListCallsQ
             .Select(c => new ListCallsResponseItem(
                 c.Id, c.AreaId, c.Area.Name, c.Subject, c.Priority.ToString(), c.Status.ToString(),
                 c.CreatedByUserId, c.CreatedByUser.Name, c.AssignedUserId, c.AssignedUser != null ? c.AssignedUser.Name : null,
-                c.StartedAt, c.CompletedAt, c.CreatedAtUtc))
+                c.StartedAt, c.CompletedAt, c.CreatedAtUtc, c.Comments.Count))
             .ToListAsync(cancellationToken);
 
         return Result.Success<IReadOnlyList<ListCallsResponseItem>>(calls);

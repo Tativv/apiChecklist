@@ -1,5 +1,6 @@
 using HotelChecklist.Api.Common.Cqrs;
 using HotelChecklist.Api.Common.Persistence;
+using HotelChecklist.Api.Features.Calls.CallComments;
 using HotelChecklist.Domain.Common;
 using Microsoft.EntityFrameworkCore;
 
@@ -41,21 +42,25 @@ public sealed class AssignCallHandler(AppDbContext db) : ICommandHandler<AssignC
                     Error.Forbidden("Calls.AreaNotCovered", "No supervisás el área de este chamado."));
         }
 
+        string? assignedUserName = null;
+
         if (command.UserId is not null)
         {
-            var userExists = await db.Users.AnyAsync(u => u.Id == command.UserId && u.Active, cancellationToken);
+            assignedUserName = await db.Users
+                .Where(u => u.Id == command.UserId && u.Active)
+                .Select(u => u.Name)
+                .FirstOrDefaultAsync(cancellationToken);
 
-            if (!userExists)
+            if (assignedUserName is null)
                 return Result.Failure<AssignCallResponse>(Error.NotFound("Users.NotFound", "Usuario no encontrado."));
         }
 
         call.AssignedUserId = command.UserId;
 
-        await db.SaveChangesAsync(cancellationToken);
+        var commentText = command.UserId is null ? "Chamado desdesignado." : $"Chamado designado a {assignedUserName}.";
+        SystemCallCommentLog.Add(db, call.Id, command.ActingUserId, commentText, DateTimeOffset.UtcNow);
 
-        var assignedUserName = command.UserId is null
-            ? null
-            : await db.Users.Where(u => u.Id == command.UserId).Select(u => u.Name).FirstAsync(cancellationToken);
+        await db.SaveChangesAsync(cancellationToken);
 
         return Result.Success(new AssignCallResponse(call.Id, call.AssignedUserId, assignedUserName));
     }

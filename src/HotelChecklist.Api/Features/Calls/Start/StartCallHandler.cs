@@ -1,5 +1,6 @@
 using HotelChecklist.Api.Common.Cqrs;
 using HotelChecklist.Api.Common.Persistence;
+using HotelChecklist.Api.Features.Calls.CallComments;
 using HotelChecklist.Domain.Common;
 using HotelChecklist.Domain.Enums;
 using Microsoft.EntityFrameworkCore;
@@ -25,6 +26,8 @@ public sealed class StartCallHandler(AppDbContext db) : ICommandHandler<StartCal
 
         call.Status = CallStatus.InProgress;
         call.StartedAt = DateTimeOffset.UtcNow;
+
+        SystemCallCommentLog.Add(db, call.Id, command.ActingUserId, "Chamado iniciado.", call.StartedAt.Value);
 
         await db.SaveChangesAsync(cancellationToken);
 

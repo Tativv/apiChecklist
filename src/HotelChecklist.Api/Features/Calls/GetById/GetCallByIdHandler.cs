@@ -14,7 +14,7 @@ public sealed class GetCallByIdHandler(AppDbContext db) : IQueryHandler<GetCallB
             .Select(c => new GetCallByIdResponse(
                 c.Id, c.AreaId, c.Area.Name, c.Subject, c.Description, c.Priority.ToString(), c.Status.ToString(),
                 c.CreatedByUserId, c.CreatedByUser.Name, c.AssignedUserId, c.AssignedUser != null ? c.AssignedUser.Name : null,
-                c.StartedAt, c.CompletedAt, c.DurationSeconds, c.CreatedAtUtc))
+                c.StartedAt, c.CompletedAt, c.DurationSeconds, c.CreatedAtUtc, c.Comments.Count))
             .FirstOrDefaultAsync(cancellationToken);
 
         if (response is null)

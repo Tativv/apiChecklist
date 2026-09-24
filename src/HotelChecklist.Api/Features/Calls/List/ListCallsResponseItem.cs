@@ -13,4 +13,5 @@ public sealed record ListCallsResponseItem(
     string? AssignedUserName,
     DateTimeOffset? StartedAt,
     DateTimeOffset? CompletedAt,
-    DateTimeOffset CreatedAtUtc);
+    DateTimeOffset CreatedAtUtc,
+    int CommentCount);

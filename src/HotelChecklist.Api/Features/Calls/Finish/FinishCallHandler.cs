@@ -1,5 +1,6 @@
 using HotelChecklist.Api.Common.Cqrs;
 using HotelChecklist.Api.Common.Persistence;
+using HotelChecklist.Api.Features.Calls.CallComments;
 using HotelChecklist.Domain.Common;
 using HotelChecklist.Domain.Enums;
 using Microsoft.EntityFrameworkCore;
@@ -26,6 +27,8 @@ public sealed class FinishCallHandler(AppDbContext db) : ICommandHandler<FinishC
         call.CompletedAt = DateTimeOffset.UtcNow;
         call.DurationSeconds = (long)(call.CompletedAt.Value - call.StartedAt!.Value).TotalSeconds;
         call.Status = CallStatus.Finished;
+
+        SystemCallCommentLog.Add(db, call.Id, command.ActingUserId, "Chamado concluído.", call.CompletedAt.Value);
 
         await db.SaveChangesAsync(cancellationToken);
 

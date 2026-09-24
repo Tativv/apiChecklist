@@ -1,6 +1,7 @@
 using FluentValidation;
 using HotelChecklist.Api.Common.Cqrs;
 using HotelChecklist.Api.Features.Calls.Assign;
+using HotelChecklist.Api.Features.Calls.CallComments;
 using HotelChecklist.Api.Features.Calls.Create;
 using HotelChecklist.Api.Features.Calls.Finish;
 using HotelChecklist.Api.Features.Calls.GetById;
@@ -26,6 +27,12 @@ public static class CallsEndpoints
 
         services.AddScoped<ICommandHandler<FinishCallCommand, FinishCallResponse>, FinishCallHandler>();
 
+        services.AddScoped<IQueryHandler<ListCallCommentsQuery, IReadOnlyList<CallCommentResponseItem>>, ListCallCommentsHandler>();
+
+        services.AddScoped<ICommandHandler<AddCallCommentCommand, CallCommentResponseItem>, AddCallCommentHandler>();
+
+        services.AddScoped<IQueryHandler<GetCallCommentFileQuery, GetCallCommentFileResponse>, GetCallCommentFileHandler>();
+
         return services;
     }
 
@@ -39,5 +46,8 @@ public static class CallsEndpoints
         group.MapAssignCall();
         group.MapStartCall();
         group.MapFinishCall();
+        group.MapListCallComments();
+        group.MapAddCallComment();
+        group.MapGetCallCommentFile();
     }
 }

@@ -36,4 +36,6 @@ public sealed class Call : IAuditable
     public Area Area { get; set; } = null!;
 
     public User? AssignedUser { get; set; }
+
+    public ICollection<CallComment> Comments { get; set; } = [];
 }
