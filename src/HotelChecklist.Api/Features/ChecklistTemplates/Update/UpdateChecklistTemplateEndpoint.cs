@@ -1,3 +1,4 @@
+using System.Security.Claims;
 using HotelChecklist.Api.Common.Auth;
 using HotelChecklist.Api.Common.Cqrs;
 using HotelChecklist.Api.Common.Errors;
@@ -12,10 +13,11 @@ public static class UpdateChecklistTemplateEndpoint
         group.MapPut("/{id:guid}", async (
                 Guid id,
                 UpdateChecklistTemplateRequest request,
+                ClaimsPrincipal user,
                 ICommandHandler<UpdateChecklistTemplateCommand, UpdateChecklistTemplateResponse> handler,
                 CancellationToken cancellationToken) =>
             {
-                var result = await handler.Handle(request.ToCommand(id), cancellationToken);
+                var result = await handler.Handle(request.ToCommand(id, user.GetRole()), cancellationToken);
                 return result.ToHttpResult();
             })
             .AddEndpointFilter<ValidationFilter<UpdateChecklistTemplateRequest>>()
@@ -23,6 +25,7 @@ public static class UpdateChecklistTemplateEndpoint
             .WithName("UpdateChecklistTemplate")
             .Produces<UpdateChecklistTemplateResponse>()
             .ProducesValidationProblem()
+            .ProducesProblem(StatusCodes.Status403Forbidden)
             .ProducesProblem(StatusCodes.Status404NotFound)
             .ProducesProblem(StatusCodes.Status409Conflict);
     }

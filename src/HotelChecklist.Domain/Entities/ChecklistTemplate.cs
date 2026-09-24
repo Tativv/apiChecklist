@@ -15,6 +15,8 @@ public sealed class ChecklistTemplate : IAuditable
 
     public TaskExecutionMode ExecutionMode { get; set; } = TaskExecutionMode.Scheduled;
 
+    public UserRole CreatedByRole { get; set; }
+
     public string? Description { get; set; }
 
     public Guid AreaId { get; set; }

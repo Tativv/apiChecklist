@@ -23,7 +23,8 @@ public sealed class ListChecklistTemplatesHandler(AppDbContext db) : IQueryHandl
                 t.EstimatedDurationMinutes,
                 t.TemplateSchedules.Count,
                 t.Tasks.Count,
-                t.TemplateAssets.Count))
+                t.TemplateAssets.Count,
+                t.CreatedByRole.ToString()))
             .ToListAsync(cancellationToken);
 
         return Result.Success<IReadOnlyList<ListChecklistTemplatesResponseItem>>(templates);

@@ -7,4 +7,5 @@ public sealed record ListChecklistTemplatesResponseItem(
     int EstimatedDurationMinutes,
     int ScheduleCount,
     int TaskCount,
-    int AssetCount);
+    int AssetCount,
+    string CreatedByRole);

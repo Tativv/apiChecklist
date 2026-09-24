@@ -1,4 +1,5 @@
 using HotelChecklist.Api.Common.Cqrs;
+using HotelChecklist.Domain.Enums;
 
 namespace HotelChecklist.Api.Features.ChecklistTemplates.Update;
 
@@ -10,4 +11,5 @@ public sealed record UpdateChecklistTemplateCommand(
     int EstimatedDurationMinutes,
     string ExecutionMode,
     List<ScheduleInput> Schedules,
-    List<ChecklistTaskRequest> Tasks) : ICommand<UpdateChecklistTemplateResponse>;
+    List<ChecklistTaskRequest> Tasks,
+    UserRole ActingUserRole) : ICommand<UpdateChecklistTemplateResponse>;

@@ -1,10 +1,11 @@
 using HotelChecklist.Domain.Entities;
+using HotelChecklist.Domain.Enums;
 
 namespace HotelChecklist.Api.Features.ChecklistTemplates.Create;
 
 public static class CreateChecklistTemplateMapping
 {
-    public static CreateChecklistTemplateCommand ToCommand(this CreateChecklistTemplateRequest request) =>
+    public static CreateChecklistTemplateCommand ToCommand(this CreateChecklistTemplateRequest request, UserRole actingUserRole) =>
         new(
             request.Name,
             request.Description,
@@ -12,7 +13,8 @@ public static class CreateChecklistTemplateMapping
             request.EstimatedDurationMinutes,
             request.ExecutionMode,
             request.Schedules,
-            request.Tasks);
+            request.Tasks,
+            actingUserRole);
 
     public static CreateChecklistTemplateResponse ToResponse(this ChecklistTemplate template) => new(
         template.Id,
@@ -21,6 +23,7 @@ public static class CreateChecklistTemplateMapping
         template.AreaId,
         template.EstimatedDurationMinutes,
         template.ExecutionMode.ToString(),
+        template.CreatedByRole.ToString(),
         template.TemplateSchedules.OrderBy(ts => ts.Schedule.ExecutionOrder).Select(ts => ts.Schedule.ToResponseItem()).ToList(),
         template.Tasks.OrderBy(t => t.Order).Select(t => t.ToResponseItem()).ToList());
 }

@@ -14,6 +14,10 @@ public sealed class DeleteChecklistTemplateHandler(AppDbContext db) : ICommandHa
         if (template is null)
             return Result.Failure<Unit>(Error.NotFound("ChecklistTemplates.NotFound", "Template no encontrado."));
 
+        if (!RoleHierarchy.Outranks(command.ActingUserRole, template.CreatedByRole))
+            return Result.Failure<Unit>(
+                Error.Forbidden("ChecklistTemplates.InsufficientHierarchy", "Este template fue creado por un rol superior al tuyo."));
+
         var hasInstances = await db.ChecklistInstances.AnyAsync(i => i.TemplateId == command.Id, cancellationToken);
 
         if (hasInstances)

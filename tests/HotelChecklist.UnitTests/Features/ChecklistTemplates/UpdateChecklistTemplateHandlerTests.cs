@@ -26,7 +26,7 @@ public class UpdateChecklistTemplateHandlerTests
 
     private static readonly ScheduleInput DailySchedule = new("Daily", 1, null, null, "08:00", 0);
 
-    private static ChecklistTemplate BuildTemplate(Guid areaId)
+    private static ChecklistTemplate BuildTemplate(Guid areaId, UserRole createdByRole = UserRole.Directoria)
     {
         var templateId = Guid.NewGuid();
         return new ChecklistTemplate
@@ -37,12 +37,13 @@ public class UpdateChecklistTemplateHandlerTests
             Name = "Original",
             AreaId = areaId,
             EstimatedDurationMinutes = 15,
+            CreatedByRole = createdByRole,
             Tasks = [new ChecklistTaskRequest("Tarea 1", null, 1, "Continuous", []).ToTask()]
         };
     }
 
     private static UpdateChecklistTemplateCommand BuildCommand(
-        Guid templateId, Guid areaId, string name, string taskName) => new(
+        Guid templateId, Guid areaId, string name, string taskName, UserRole actingUserRole = UserRole.Directoria) => new(
         templateId,
         name,
         "desc",
@@ -50,7 +51,8 @@ public class UpdateChecklistTemplateHandlerTests
         20,
         "Scheduled",
         [DailySchedule],
-        [new ChecklistTaskRequest(taskName, null, 1, "Continuous", [])]);
+        [new ChecklistTaskRequest(taskName, null, 1, "Continuous", [])],
+        actingUserRole);
 
     [Fact]
     public async Task Handle_NameOnlyChange_ShouldMutateInPlace_EvenWithPastHistory()
@@ -238,5 +240,44 @@ public class UpdateChecklistTemplateHandlerTests
 
         result.IsFailure.Should().BeTrue();
         result.Error.Code.Should().Be("ChecklistTemplates.IsSnapshot");
+    }
+
+    [Fact]
+    public async Task Handle_LowerHierarchyActor_ShouldBeForbidden()
+    {
+        await using var db = CreateDbContext();
+        var area = new Area { Id = Guid.NewGuid(), Name = "Área" };
+        var template = BuildTemplate(area.Id, createdByRole: UserRole.Directoria);
+        var taskName = template.Tasks.First().Name;
+        db.Areas.Add(area);
+        db.ChecklistTemplates.Add(template);
+        await db.SaveChangesAsync();
+
+        var command = BuildCommand(template.Id, area.Id, "Editado", taskName, actingUserRole: UserRole.Supervisor);
+
+        var handler = new UpdateChecklistTemplateHandler(db);
+        var result = await handler.Handle(command, CancellationToken.None);
+
+        result.IsFailure.Should().BeTrue();
+        result.Error.Code.Should().Be("ChecklistTemplates.InsufficientHierarchy");
+    }
+
+    [Fact]
+    public async Task Handle_SameOrHigherHierarchyActor_ShouldSucceed()
+    {
+        await using var db = CreateDbContext();
+        var area = new Area { Id = Guid.NewGuid(), Name = "Área" };
+        var template = BuildTemplate(area.Id, createdByRole: UserRole.Supervisor);
+        var taskName = template.Tasks.First().Name;
+        db.Areas.Add(area);
+        db.ChecklistTemplates.Add(template);
+        await db.SaveChangesAsync();
+
+        var command = BuildCommand(template.Id, area.Id, "Editado", taskName, actingUserRole: UserRole.Gerencia);
+
+        var handler = new UpdateChecklistTemplateHandler(db);
+        var result = await handler.Handle(command, CancellationToken.None);
+
+        result.IsSuccess.Should().BeTrue(result.IsFailure ? $"{result.Error.Code}: {result.Error.Message}" : "");
     }
 }

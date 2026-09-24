@@ -11,6 +11,9 @@ public static class ClaimsPrincipalExtensions
         return Guid.Parse(subClaim!);
     }
 
+    public static UserRole GetRole(this ClaimsPrincipal principal) =>
+        Enum.Parse<UserRole>(principal.FindFirstValue(ClaimTypes.Role)!);
+
     public static bool IsSupervisorOrAbove(this ClaimsPrincipal principal) =>
         principal.IsInRole(UserRole.Directoria.ToString())
         || principal.IsInRole(UserRole.Gerencia.ToString())

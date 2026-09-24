@@ -7,6 +7,7 @@ public sealed record GetChecklistTemplateByIdResponse(
     Guid AreaId,
     int EstimatedDurationMinutes,
     string ExecutionMode,
+    string CreatedByRole,
     List<ScheduleResponseItem> Schedules,
     List<ChecklistTaskResponseItem> Tasks,
     List<Guid> AssetIds);

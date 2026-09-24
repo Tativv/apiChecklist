@@ -11,10 +11,14 @@ public sealed class ConfigureTemplateAssetsHandler(AppDbContext db)
 {
     public async Task<Result<ConfigureTemplateAssetsResponse>> Handle(ConfigureTemplateAssetsCommand command, CancellationToken cancellationToken)
     {
-        var templateExists = await db.ChecklistTemplates.AnyAsync(t => t.Id == command.TemplateId, cancellationToken);
+        var template = await db.ChecklistTemplates.FirstOrDefaultAsync(t => t.Id == command.TemplateId, cancellationToken);
 
-        if (!templateExists)
+        if (template is null)
             return Result.Failure<ConfigureTemplateAssetsResponse>(Error.NotFound("ChecklistTemplates.NotFound", "Template no encontrado."));
+
+        if (!RoleHierarchy.Outranks(command.ActingUserRole, template.CreatedByRole))
+            return Result.Failure<ConfigureTemplateAssetsResponse>(
+                Error.Forbidden("ChecklistTemplates.InsufficientHierarchy", "Este template fue creado por un rol superior al tuyo."));
 
         var requestedAssetIds = command.AssetIds.Distinct().ToList();
 

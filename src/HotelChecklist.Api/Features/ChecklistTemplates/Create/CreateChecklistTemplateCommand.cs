@@ -1,4 +1,5 @@
 using HotelChecklist.Api.Common.Cqrs;
+using HotelChecklist.Domain.Enums;
 
 namespace HotelChecklist.Api.Features.ChecklistTemplates.Create;
 
@@ -9,4 +10,5 @@ public sealed record CreateChecklistTemplateCommand(
     int EstimatedDurationMinutes,
     string ExecutionMode,
     List<ScheduleInput> Schedules,
-    List<ChecklistTaskRequest> Tasks) : ICommand<CreateChecklistTemplateResponse>;
+    List<ChecklistTaskRequest> Tasks,
+    UserRole ActingUserRole) : ICommand<CreateChecklistTemplateResponse>;

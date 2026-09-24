@@ -24,6 +24,10 @@ public sealed class UpdateChecklistTemplateHandler(AppDbContext db) : ICommandHa
             return Result.Failure<UpdateChecklistTemplateResponse>(
                 Error.Conflict("ChecklistTemplates.IsSnapshot", "No se puede editar una versión histórica de un template."));
 
+        if (!RoleHierarchy.Outranks(command.ActingUserRole, template.CreatedByRole))
+            return Result.Failure<UpdateChecklistTemplateResponse>(
+                Error.Forbidden("ChecklistTemplates.InsufficientHierarchy", "Este template fue creado por un rol superior al tuyo."));
+
         var areaExists = await db.Areas.AnyAsync(a => a.Id == command.AreaId, cancellationToken);
 
         if (!areaExists)
@@ -132,6 +136,7 @@ public sealed class UpdateChecklistTemplateHandler(AppDbContext db) : ICommandHa
             AreaId = command.AreaId,
             EstimatedDurationMinutes = command.EstimatedDurationMinutes,
             ExecutionMode = Enum.Parse<TaskExecutionMode>(command.ExecutionMode, ignoreCase: true),
+            CreatedByRole = command.ActingUserRole,
             TemplateSchedules = command.Schedules
                 .Select(s => new TemplateSchedule { Id = Guid.NewGuid(), Schedule = s.ToSchedule() })
                 .ToList(),

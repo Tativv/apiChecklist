@@ -1,3 +1,4 @@
+using System.Security.Claims;
 using HotelChecklist.Api.Common.Auth;
 using HotelChecklist.Api.Common.Cqrs;
 using HotelChecklist.Api.Common.Errors;
@@ -11,10 +12,11 @@ public static class CreateChecklistTemplateEndpoint
     {
         group.MapPost("/", async (
                 CreateChecklistTemplateRequest request,
+                ClaimsPrincipal user,
                 ICommandHandler<CreateChecklistTemplateCommand, CreateChecklistTemplateResponse> handler,
                 CancellationToken cancellationToken) =>
             {
-                var result = await handler.Handle(request.ToCommand(), cancellationToken);
+                var result = await handler.Handle(request.ToCommand(user.GetRole()), cancellationToken);
                 return result.ToHttpResult(StatusCodes.Status201Created);
             })
             .AddEndpointFilter<ValidationFilter<CreateChecklistTemplateRequest>>()

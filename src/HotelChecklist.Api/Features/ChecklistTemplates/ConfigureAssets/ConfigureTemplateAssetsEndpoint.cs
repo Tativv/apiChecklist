@@ -1,3 +1,4 @@
+using System.Security.Claims;
 using HotelChecklist.Api.Common.Auth;
 using HotelChecklist.Api.Common.Cqrs;
 using HotelChecklist.Api.Common.Errors;
@@ -12,10 +13,11 @@ public static class ConfigureTemplateAssetsEndpoint
         group.MapPut("/{id:guid}/assets", async (
                 Guid id,
                 ConfigureTemplateAssetsRequest request,
+                ClaimsPrincipal user,
                 ICommandHandler<ConfigureTemplateAssetsCommand, ConfigureTemplateAssetsResponse> handler,
                 CancellationToken cancellationToken) =>
             {
-                var result = await handler.Handle(request.ToCommand(id), cancellationToken);
+                var result = await handler.Handle(request.ToCommand(id, user.GetRole()), cancellationToken);
                 return result.ToHttpResult();
             })
             .AddEndpointFilter<ValidationFilter<ConfigureTemplateAssetsRequest>>()
@@ -23,6 +25,7 @@ public static class ConfigureTemplateAssetsEndpoint
             .WithName("ConfigureTemplateAssets")
             .Produces<ConfigureTemplateAssetsResponse>()
             .ProducesValidationProblem()
+            .ProducesProblem(StatusCodes.Status403Forbidden)
             .ProducesProblem(StatusCodes.Status404NotFound);
     }
 }

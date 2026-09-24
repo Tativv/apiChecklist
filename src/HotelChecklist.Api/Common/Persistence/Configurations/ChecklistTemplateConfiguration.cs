@@ -21,6 +21,10 @@ public sealed class ChecklistTemplateConfiguration : IEntityTypeConfiguration<Ch
             .HasConversion<string>()
             .HasMaxLength(20);
 
+        builder.Property(t => t.CreatedByRole)
+            .HasConversion<string>()
+            .HasMaxLength(20);
+
         builder.HasIndex(t => t.AreaId);
 
         builder.HasIndex(t => new { t.GroupId, t.IsSnapshot });

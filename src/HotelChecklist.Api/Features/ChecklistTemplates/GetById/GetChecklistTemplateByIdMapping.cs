@@ -11,6 +11,7 @@ public static class GetChecklistTemplateByIdMapping
         template.AreaId,
         template.EstimatedDurationMinutes,
         template.ExecutionMode.ToString(),
+        template.CreatedByRole.ToString(),
         template.TemplateSchedules.OrderBy(ts => ts.Schedule.ExecutionOrder).Select(ts => ts.Schedule.ToResponseItem()).ToList(),
         template.Tasks.OrderBy(t => t.Order).Select(t => t.ToResponseItem()).ToList(),
         template.TemplateAssets.Select(ta => ta.AssetId).ToList());

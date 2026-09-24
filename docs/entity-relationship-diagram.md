@@ -140,6 +140,7 @@ erDiagram
         uuid area_id FK
         int estimated_duration_minutes
         string execution_mode "Scheduled u Continuous — igual que ChecklistTask"
+        string created_by_role "Supervisor | Gerencia | Directoria — fijo desde la creación"
     }
 
     CHECKLIST_TASK {
@@ -237,6 +238,21 @@ erDiagram
 
 ## Notas de diseño
 
+- **`ChecklistTemplate.CreatedByRole` impone jerarquía de edición, `ChecklistInstance` no**: cada
+  template graba el rol de quien lo creó (fijo desde la creación, no se recalcula si ese usuario
+  cambia de rol después). `Update`, `Delete` y `ConfigureAssets` rechazan con 403
+  (`ChecklistTemplates.InsufficientHierarchy`) si `RoleHierarchy.Rank(usuario actuante) <
+  RoleHierarchy.Rank(created_by_role)` — jerarquía `Directoria(3) > Gerencia(2) > Supervisor(1) >
+  Colaborador(0)`. `Create` no tiene restricción (cualquier Supervisor+), graba su propio rol.
+  Cuando el versionado copy-on-write crea una fila nueva (edición que cambia tareas), esa fila
+  nueva queda marcada con el rol de quien hizo la edición — sólo puede llegar a esa rama alguien
+  con jerarquía suficiente para editar el original, así que esto no abre ningún agujero. Los
+  templates que ya existían antes de esta feature quedaron con `created_by_role = Supervisor`
+  (backfill de migración), para no dejar a ningún Supervisor actual sin acceso a lo que ya había.
+  **`ChecklistInstance` no tiene ningún campo ni restricción equivalente**: Supervisor+ puede
+  crear (manual o por frecuencia), asignar colaborador, iniciar/finalizar/aprobar/reabrir/borrar
+  cualquier instancia sin importar de qué rol es el template de origen — la jerarquía sólo protege
+  el template en sí, nunca los checklists que genera.
 - **`Call` (chamados) es un flujo independiente de los checklists**, con su propio ciclo de vida
   de 3 estados: `Open → InProgress → Finished` (sin reabrir, sin editar ni borrar después de
   creado — se puede agregar si hace falta). Solo Supervisor+ puede abrir uno (`CreateCall`).

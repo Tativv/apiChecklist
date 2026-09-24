@@ -28,6 +28,7 @@ public sealed class CreateChecklistTemplateHandler(AppDbContext db) : ICommandHa
             AreaId = command.AreaId,
             EstimatedDurationMinutes = command.EstimatedDurationMinutes,
             ExecutionMode = Enum.Parse<TaskExecutionMode>(command.ExecutionMode, ignoreCase: true),
+            CreatedByRole = command.ActingUserRole,
             TemplateSchedules = command.Schedules
                 .Select(s => new TemplateSchedule { Id = Guid.NewGuid(), Schedule = s.ToSchedule() })
                 .ToList(),
