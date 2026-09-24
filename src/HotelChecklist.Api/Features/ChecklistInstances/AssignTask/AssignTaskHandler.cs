@@ -1,5 +1,6 @@
 using HotelChecklist.Api.Common.Cqrs;
 using HotelChecklist.Api.Common.Persistence;
+using HotelChecklist.Api.Features.ChecklistInstances.TaskComments;
 using HotelChecklist.Domain.Common;
 using HotelChecklist.Domain.Enums;
 using Microsoft.EntityFrameworkCore;
@@ -15,6 +16,10 @@ public sealed class AssignTaskHandler(AppDbContext db) : ICommandHandler<AssignT
 
         if (taskExecution is null)
             return Result.Failure<AssignTaskResponse>(Error.NotFound("ChecklistTaskExecutions.NotFound", "Tarea no encontrada."));
+
+        if (taskExecution.Status == TaskExecutionStatus.Reviewed)
+            return Result.Failure<AssignTaskResponse>(
+                Error.Conflict("ChecklistTaskExecutions.InvalidTransition", "No se puede reasignar una tarea ya revisada."));
 
         var instance = await db.ChecklistInstances.FirstAsync(i => i.Id == command.InstanceId, cancellationToken);
 
@@ -33,11 +38,16 @@ public sealed class AssignTaskHandler(AppDbContext db) : ICommandHandler<AssignT
                     Error.Forbidden("ChecklistInstances.AreaNotCovered", "No supervisás el área de este checklist."));
         }
 
+        string? assignedUserName = null;
+
         if (command.UserId is not null)
         {
-            var userExists = await db.Users.AnyAsync(u => u.Id == command.UserId && u.Active, cancellationToken);
+            assignedUserName = await db.Users
+                .Where(u => u.Id == command.UserId && u.Active)
+                .Select(u => u.Name)
+                .FirstOrDefaultAsync(cancellationToken);
 
-            if (!userExists)
+            if (assignedUserName is null)
                 return Result.Failure<AssignTaskResponse>(Error.NotFound("Users.NotFound", "Usuario no encontrado."));
         }
 
@@ -51,6 +61,9 @@ public sealed class AssignTaskHandler(AppDbContext db) : ICommandHandler<AssignT
             instance.Status = ChecklistStatus.InProgress;
             instance.StartedAt = DateTimeOffset.UtcNow;
         }
+
+        var commentText = command.UserId is null ? "Tarefa desdesignada." : $"Tarefa designada a {assignedUserName}.";
+        SystemTaskCommentLog.Add(db, taskExecution.Id, command.ActingUserId, commentText, DateTimeOffset.UtcNow);
 
         await db.SaveChangesAsync(cancellationToken);
 

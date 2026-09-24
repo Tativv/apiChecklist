@@ -291,7 +291,12 @@ erDiagram
     iniciada.", "concluída.", "revisada.", "reiniciada.") con el usuario que actuó como autor —
     queda como parte del mismo historial que los comentarios manuales, sirviendo de auditoría
     visible sin una tabla de log aparte. `GetChecklistInstanceById` expone `CommentCount` por
-    tarea (ya no `EvidenceCount`).
+    tarea (ya no `EvidenceCount`). `AssignTask` hace lo mismo ("Tarefa designada a {nombre}." /
+    "Tarefa desdesignada.") aunque no toca `TaskExecutionStatus`.
+  - **`AssignTask` rechaza con Conflict si la tarea ya está `Reviewed`**: una vez revisada, ni
+    Supervisor+ puede cambiarle el responsable — hay que `RestartTask` primero (vuelve a
+    `Pending`) para poder reasignar. El frontend oculta el selector de asignación en ese estado
+    (muestra el nombre como texto, igual que cuando no tiene permiso).
   - `DashboardResponse` suma estadísticas por **tarea** (`TasksTotal/Pending/InProgress/Completed/
     Reviewed/Overdue`, `AverageTaskDurationSeconds`) además de las ya existentes por checklist —
     mismo filtro `FromDate`/`ToDate` sobre `ChecklistTaskExecution.ChecklistInstance.Date`.
