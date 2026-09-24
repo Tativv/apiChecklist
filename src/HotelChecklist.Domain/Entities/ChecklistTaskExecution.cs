@@ -53,4 +53,6 @@ public sealed class ChecklistTaskExecution
     public User? ApprovedByUser { get; set; }
 
     public ICollection<ChecklistTaskEvidence> Evidences { get; set; } = [];
+
+    public ICollection<ChecklistTaskComment> Comments { get; set; } = [];
 }

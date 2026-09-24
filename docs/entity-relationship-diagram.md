@@ -93,12 +93,14 @@ erDiagram
     CHECKLIST_INSTANCE ||--o{ CHECKLIST_TASK_EXECUTION : contiene
 
     CHECKLIST_TASK_EXECUTION ||--o{ CHECKLIST_TASK_EVIDENCE : adjunta
+    CHECKLIST_TASK_EXECUTION ||--o{ CHECKLIST_TASK_COMMENT : tiene
     CHECKLIST_TASK_EXECUTION }o--o| USER : "asignada a"
     CHECKLIST_TASK_EXECUTION }o--o| USER : "asignada por"
     CHECKLIST_TASK_EXECUTION }o--o| USER : "ejecutada por"
     CHECKLIST_TASK_EXECUTION }o--o| USER : "aprobada por"
 
     CHECKLIST_TASK_EVIDENCE }o--|| USER : "subido por"
+    CHECKLIST_TASK_COMMENT }o--|| USER : "escrito por"
 
     AREA ||--o{ CALL : "destino de"
     CALL }o--|| USER : "abierto por"
@@ -223,6 +225,14 @@ erDiagram
         uuid uploaded_by_user_id FK
     }
 
+    CHECKLIST_TASK_COMMENT {
+        uuid id PK
+        uuid checklist_task_execution_id FK
+        string text "max 2000 caracteres"
+        timestamptz created_at
+        uuid author_user_id FK
+    }
+
     CALL {
         uuid id PK
         uuid created_by_user_id FK
@@ -270,6 +280,18 @@ erDiagram
     `Task.EstimatedDurationMinutes` para mostrarla de solo lectura junto a cada ejecución.
     `ChecklistTemplate.EstimatedDurationMinutes` (duración del checklist completo) se eliminó por
     no ser necesaria: la duración ahora vive únicamente a nivel de cada tarea.
+  - **`RestartTask`** (Supervisor+, `Completed`/`Reviewed` → `Pending`) permite reabrir una tarea
+    puntual sin reabrir todo el checklist: limpia `started_at`/`completed_at`/`duration_seconds`,
+    `executed_by_user_id` y la revisión (`approved_by_user_id`/`approved_at`), pero **conserva**
+    `assigned_user_id`, `comment` y las evidencias — a diferencia de `ReopenChecklistInstance`, que
+    limpia todo. Si el checklist ya estaba `Completed`, vuelve a `InProgress` y se le borran
+    `completed_at`/`duration_seconds` (una tarea `Pending` no puede convivir con un checklist
+    `Completed`, que exige todas las tareas concluidas/revisadas).
+  - **`ChecklistTaskComment`**: historial de comentarios libres por tarea (no reemplaza al campo
+    `Comment` de `ChecklistTaskExecution`, que es una nota puntual asociada a la ejecución
+    concreta) — cualquier usuario autenticado puede listarlos o agregar uno nuevo vía
+    `POST/GET .../tasks/{id}/comments`, sin restricción de asignación ni de estado de la tarea.
+    `GetChecklistInstanceById` expone `CommentCount` por tarea, igual que `EvidenceCount`.
   - `DashboardResponse` suma estadísticas por **tarea** (`TasksTotal/Pending/InProgress/Completed/
     Reviewed/Overdue`, `AverageTaskDurationSeconds`) además de las ya existentes por checklist —
     mismo filtro `FromDate`/`ToDate` sobre `ChecklistTaskExecution.ChecklistInstance.Date`.

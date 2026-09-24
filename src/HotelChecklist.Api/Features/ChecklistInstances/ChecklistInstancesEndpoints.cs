@@ -12,8 +12,10 @@ using HotelChecklist.Api.Features.ChecklistInstances.GetMyAssignedTasks;
 using HotelChecklist.Api.Features.ChecklistInstances.GetUpcomingOccurrences;
 using HotelChecklist.Api.Features.ChecklistInstances.List;
 using HotelChecklist.Api.Features.ChecklistInstances.Reopen;
+using HotelChecklist.Api.Features.ChecklistInstances.RestartTask;
 using HotelChecklist.Api.Features.ChecklistInstances.ReviewTask;
 using HotelChecklist.Api.Features.ChecklistInstances.StartTask;
+using HotelChecklist.Api.Features.ChecklistInstances.TaskComments;
 using HotelChecklist.Api.Features.ChecklistInstances.UploadEvidence;
 
 namespace HotelChecklist.Api.Features.ChecklistInstances;
@@ -45,6 +47,13 @@ public static class ChecklistInstancesEndpoints
 
         services.AddScoped<ICommandHandler<ReviewTaskCommand, ReviewTaskResponse>, ReviewTaskHandler>();
 
+        services.AddScoped<ICommandHandler<RestartTaskCommand, RestartTaskResponse>, RestartTaskHandler>();
+
+        services.AddScoped<IQueryHandler<ListTaskCommentsQuery, IReadOnlyList<TaskCommentResponseItem>>, ListTaskCommentsHandler>();
+
+        services.AddScoped<ICommandHandler<AddTaskCommentCommand, TaskCommentResponseItem>, AddTaskCommentHandler>();
+        services.AddScoped<IValidator<AddTaskCommentRequest>, AddTaskCommentRequestValidator>();
+
         services.AddScoped<ICommandHandler<AssignTaskCommand, AssignTaskResponse>, AssignTaskHandler>();
 
         services.AddScoped<IQueryHandler<GetMyAssignedTasksQuery, IReadOnlyList<MyAssignedTaskItem>>, GetMyAssignedTasksHandler>();
@@ -75,6 +84,9 @@ public static class ChecklistInstancesEndpoints
         group.MapStartTask();
         group.MapCompleteChecklistTask();
         group.MapReviewTask();
+        group.MapRestartTask();
+        group.MapListTaskComments();
+        group.MapAddTaskComment();
         group.MapAssignTask();
         group.MapUploadEvidence();
         group.MapGetEvidenceFile();
