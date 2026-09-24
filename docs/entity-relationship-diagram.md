@@ -300,6 +300,11 @@ erDiagram
   - `DashboardResponse` suma estadísticas por **tarea** (`TasksTotal/Pending/InProgress/Completed/
     Reviewed/Overdue`, `AverageTaskDurationSeconds`) además de las ya existentes por checklist —
     mismo filtro `FromDate`/`ToDate` sobre `ChecklistTaskExecution.ChecklistInstance.Date`.
+    `ByDateReportResponseItem`/`ByAreaReportResponseItem` ganaron el mismo bloque de campos
+    `Tasks*` (agrupando `ChecklistTaskExecution` por fecha/área vía `ChecklistInstance`, unión de
+    claves con el conjunto de checklists para no perder fechas/áreas que tengan tareas pero cero
+    checklists en el grupo, caso límite) — el dashboard los usa para un gráfico de tendencia de 14
+    días y un ranking de áreas por tasa de conclusión de tareas de los últimos 7 días.
   - Migración de datos existentes: `Approved→InProgress` y `Reviewed→Completed` a nivel instancia,
     `Skipped→Pending` a nivel tarea; la columna `executed_at_utc` (que ya guardaba la fecha de
     completado) se renombró a `completed_at` en vez de perder ese dato.

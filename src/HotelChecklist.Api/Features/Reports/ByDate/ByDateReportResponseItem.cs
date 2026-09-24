@@ -6,4 +6,10 @@ public sealed record ByDateReportResponseItem(
     int Pending,
     int InProgress,
     int Completed,
-    double? AverageDurationSeconds);
+    double? AverageDurationSeconds,
+    int TasksTotal,
+    int TasksPending,
+    int TasksInProgress,
+    int TasksCompleted,
+    int TasksReviewed,
+    double? AverageTaskDurationSeconds);
