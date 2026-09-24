@@ -167,6 +167,7 @@ public sealed class UpdateChecklistTemplateHandler(AppDbContext db) : ICommandHa
 
             if (oldTask.Name != newTask.Name
                 || oldTask.Description != newTask.Description
+                || oldTask.EstimatedDurationMinutes != newTask.EstimatedDurationMinutes
                 || !string.Equals(oldTask.ExecutionMode.ToString(), newTask.ExecutionMode, StringComparison.OrdinalIgnoreCase))
                 return true;
 

@@ -43,7 +43,6 @@ public sealed class AssignTaskHandler(AppDbContext db) : ICommandHandler<AssignT
 
         taskExecution.AssignedUserId = command.UserId;
         taskExecution.CreatedByUserId = command.UserId is null ? null : command.ActingUserId;
-        taskExecution.EstimatedDurationMinutes = command.EstimatedDurationMinutes;
 
         // La primera asignación de cualquier tarea arranca el checklist entero — no hace falta un
         // "iniciar" manual aparte. Solo avanza hacia adelante: desasignar no lo hace retroceder.
@@ -55,6 +54,6 @@ public sealed class AssignTaskHandler(AppDbContext db) : ICommandHandler<AssignT
 
         await db.SaveChangesAsync(cancellationToken);
 
-        return Result.Success(new AssignTaskResponse(taskExecution.Id, taskExecution.AssignedUserId, taskExecution.CreatedByUserId, taskExecution.EstimatedDurationMinutes));
+        return Result.Success(new AssignTaskResponse(taskExecution.Id, taskExecution.AssignedUserId, taskExecution.CreatedByUserId));
     }
 }

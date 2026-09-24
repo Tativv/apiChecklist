@@ -11,6 +11,7 @@ public static class ChecklistTaskMapping
         Name = request.Name,
         Description = request.Description,
         Order = request.Order,
+        EstimatedDurationMinutes = request.EstimatedDurationMinutes,
         ExecutionMode = Enum.Parse<TaskExecutionMode>(request.ExecutionMode, ignoreCase: true),
         TaskSchedules = request.Schedules
             .Select(s => new TaskSchedule { Id = Guid.NewGuid(), Schedule = s.ToSchedule() })
@@ -22,6 +23,7 @@ public static class ChecklistTaskMapping
         task.Name,
         task.Description,
         task.Order,
+        task.EstimatedDurationMinutes,
         task.ExecutionMode.ToString(),
         task.TaskSchedules.OrderBy(ts => ts.Schedule.ExecutionOrder).Select(ts => ts.Schedule.ToResponseItem()).ToList());
 }

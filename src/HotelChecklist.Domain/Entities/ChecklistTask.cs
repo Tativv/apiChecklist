@@ -14,6 +14,8 @@ public sealed class ChecklistTask
 
     public int Order { get; set; }
 
+    public int? EstimatedDurationMinutes { get; set; }
+
     public TaskExecutionMode ExecutionMode { get; set; } = TaskExecutionMode.Scheduled;
 
     public ChecklistTemplate Template { get; set; } = null!;

@@ -61,8 +61,8 @@ public class ChecklistLifecycleTests : IClassFixture<CustomWebApplicationFactory
             "Scheduled",
             [dailySchedule],
             [
-                new ChecklistTaskRequest("Tender cama", null, 1, "Scheduled", [dailySchedule]),
-                new ChecklistTaskRequest("Limpiar baño", null, 2, "Scheduled", [dailySchedule])
+                new ChecklistTaskRequest("Tender cama", null, 1, 15, "Scheduled", [dailySchedule]),
+                new ChecklistTaskRequest("Limpiar baño", null, 2, 10, "Scheduled", [dailySchedule])
             ]));
         templateResponse.StatusCode.Should().Be(HttpStatusCode.Created);
         var template = await templateResponse.Content.ReadFromJsonAsync<CreateChecklistTemplateResponse>();
@@ -89,7 +89,7 @@ public class ChecklistLifecycleTests : IClassFixture<CustomWebApplicationFactory
         {
             var assignResponse = await _client.PostAsJsonAsync(
                 $"/api/checklist-instances/{instanceId}/tasks/{taskExecution.Id}/assign",
-                new { UserId = _gerenciaUserId, EstimatedDurationMinutes = 15 });
+                new { UserId = _gerenciaUserId });
             assignResponse.StatusCode.Should().Be(HttpStatusCode.OK);
 
             if (isFirstAssignment)

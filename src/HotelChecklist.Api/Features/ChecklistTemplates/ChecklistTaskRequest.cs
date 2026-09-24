@@ -4,5 +4,6 @@ public sealed record ChecklistTaskRequest(
     string Name,
     string? Description,
     int Order,
+    int? EstimatedDurationMinutes,
     string ExecutionMode,
     List<ScheduleInput> Schedules);

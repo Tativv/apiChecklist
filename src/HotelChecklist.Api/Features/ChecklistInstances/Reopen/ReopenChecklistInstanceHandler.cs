@@ -39,7 +39,6 @@ public sealed class ReopenChecklistInstanceHandler(AppDbContext db, IFileStorage
         {
             execution.AssignedUserId = null;
             execution.CreatedByUserId = null;
-            execution.EstimatedDurationMinutes = null;
             execution.Status = TaskExecutionStatus.Pending;
             execution.StartedAt = null;
             execution.CompletedAt = null;

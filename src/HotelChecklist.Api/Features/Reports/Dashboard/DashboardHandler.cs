@@ -38,6 +38,26 @@ public sealed class DashboardHandler(AppDbContext db) : IQueryHandler<DashboardQ
 
         var completionRate = total == 0 ? 0 : Math.Round(completed * 100.0 / total, 2);
 
-        return Result.Success(new DashboardResponse(total, pending, inProgress, completed, overdue, averageDuration, completionRate));
+        var tasksQuery = db.ChecklistTaskExecutions.Where(e =>
+            (query.FromDate == null || e.ChecklistInstance.Date >= query.FromDate)
+            && (query.ToDate == null || e.ChecklistInstance.Date <= query.ToDate));
+
+        var tasksTotal = await tasksQuery.CountAsync(cancellationToken);
+        var tasksPending = await tasksQuery.CountAsync(e => e.Status == TaskExecutionStatus.Pending, cancellationToken);
+        var tasksInProgress = await tasksQuery.CountAsync(e => e.Status == TaskExecutionStatus.InProgress, cancellationToken);
+        var tasksCompleted = await tasksQuery.CountAsync(e => e.Status == TaskExecutionStatus.Completed, cancellationToken);
+        var tasksReviewed = await tasksQuery.CountAsync(e => e.Status == TaskExecutionStatus.Reviewed, cancellationToken);
+        var tasksOverdue = await tasksQuery.CountAsync(
+            e => e.ChecklistInstance.Date < today && (e.Status == TaskExecutionStatus.Pending || e.Status == TaskExecutionStatus.InProgress),
+            cancellationToken);
+
+        var averageTaskDuration = await tasksQuery
+            .Where(e => e.DurationSeconds != null)
+            .Select(e => (double?)e.DurationSeconds!.Value)
+            .AverageAsync(cancellationToken);
+
+        return Result.Success(new DashboardResponse(
+            total, pending, inProgress, completed, overdue, averageDuration, completionRate,
+            tasksTotal, tasksPending, tasksInProgress, tasksCompleted, tasksReviewed, tasksOverdue, averageTaskDuration));
     }
 }

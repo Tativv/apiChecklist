@@ -14,8 +14,6 @@ public sealed class ChecklistTaskExecution
 
     public DateTimeOffset? ScheduledForUtc { get; set; }
 
-    public int? EstimatedDurationMinutes { get; set; }
-
     public DateTimeOffset? StartedAt { get; set; }
 
     public DateTimeOffset? CompletedAt { get; set; }

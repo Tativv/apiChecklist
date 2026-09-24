@@ -57,14 +57,13 @@ public class AssignTaskHandlerTests
         var handler = new AssignTaskHandler(db);
 
         var result = await handler.Handle(
-            new AssignTaskCommand(instanceId, task1.Id, collaborator.Id, EstimatedDurationMinutes: 20, Guid.NewGuid(), ActingUserIsExactlySupervisor: false),
+            new AssignTaskCommand(instanceId, task1.Id, collaborator.Id, Guid.NewGuid(), ActingUserIsExactlySupervisor: false),
             CancellationToken.None);
 
         result.IsSuccess.Should().BeTrue(result.IsFailure ? $"{result.Error.Code}: {result.Error.Message}" : "");
         var updatedInstance = await db.ChecklistInstances.FindAsync(instanceId);
         updatedInstance!.Status.Should().Be(ChecklistStatus.InProgress);
         updatedInstance.StartedAt.Should().NotBeNull();
-        (await db.ChecklistTaskExecutions.FindAsync(task1.Id))!.EstimatedDurationMinutes.Should().Be(20);
     }
 
     [Fact]
@@ -85,7 +84,7 @@ public class AssignTaskHandlerTests
         var handler = new AssignTaskHandler(db);
 
         var result = await handler.Handle(
-            new AssignTaskCommand(instanceId, task1.Id, collaborator.Id, null, Guid.NewGuid(), ActingUserIsExactlySupervisor: false),
+            new AssignTaskCommand(instanceId, task1.Id, collaborator.Id, Guid.NewGuid(), ActingUserIsExactlySupervisor: false),
             CancellationToken.None);
 
         result.IsSuccess.Should().BeTrue(result.IsFailure ? $"{result.Error.Code}: {result.Error.Message}" : "");
@@ -108,7 +107,7 @@ public class AssignTaskHandlerTests
         var handler = new AssignTaskHandler(db);
 
         var result = await handler.Handle(
-            new AssignTaskCommand(instanceId, task1.Id, null, null, Guid.NewGuid(), ActingUserIsExactlySupervisor: false),
+            new AssignTaskCommand(instanceId, task1.Id, null, Guid.NewGuid(), ActingUserIsExactlySupervisor: false),
             CancellationToken.None);
 
         result.IsSuccess.Should().BeTrue(result.IsFailure ? $"{result.Error.Code}: {result.Error.Message}" : "");

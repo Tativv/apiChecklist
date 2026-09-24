@@ -6,6 +6,5 @@ public sealed record AssignTaskCommand(
     Guid InstanceId,
     Guid TaskExecutionId,
     Guid? UserId,
-    int? EstimatedDurationMinutes,
     Guid ActingUserId,
     bool ActingUserIsExactlySupervisor) : ICommand<AssignTaskResponse>;

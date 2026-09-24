@@ -149,6 +149,7 @@ erDiagram
         string name
         string description
         int order
+        int estimated_duration_minutes "nullable, se define al crear/editar la tarea"
         enum execution_mode "Scheduled | Continuous"
     }
 
@@ -200,7 +201,6 @@ erDiagram
         uuid task_id FK
         uuid schedule_id FK "nullable, SET NULL"
         timestamptz scheduled_for_utc "nullable"
-        int estimated_duration_minutes "nullable, se completa al asignar"
         timestamptz started_at "nullable"
         timestamptz completed_at "nullable — antes se llamaba executed_at_utc"
         long duration_seconds "nullable, completed_at - started_at"
@@ -265,8 +265,15 @@ erDiagram
     instancia a `Pending` sin `started_at`/`completed_at`/`duration_seconds`, y cada tarea pierde
     asignación, horarios, comentario, revisión **y sus evidencias subidas** (se borran los archivos
     del storage además de las filas) — no es un simple "retroceder un paso" como antes.
-  - `EstimatedDurationMinutes` es un campo nuevo por tarea, opcional, que se completa en el momento
-    de asignar (`AssignTask`) — no está en el template, es específico de cada ejecución puntual.
+  - `ChecklistTask.EstimatedDurationMinutes` (opcional) se define al crear/editar la tarea dentro
+    del template, no al asignarla ni en la lista de tareas de la instancia — `AssignTask` ya no
+    recibe ni guarda una duración propia; `GetChecklistInstanceById` la proyecta desde
+    `Task.EstimatedDurationMinutes` para mostrarla de solo lectura junto a cada ejecución. Es
+    distinto de `ChecklistTemplate.EstimatedDurationMinutes` (duración estimada del checklist
+    completo, ya existente).
+  - `DashboardResponse` suma estadísticas por **tarea** (`TasksTotal/Pending/InProgress/Completed/
+    Reviewed/Overdue`, `AverageTaskDurationSeconds`) además de las ya existentes por checklist —
+    mismo filtro `FromDate`/`ToDate` sobre `ChecklistTaskExecution.ChecklistInstance.Date`.
   - Migración de datos existentes: `Approved→InProgress` y `Reviewed→Completed` a nivel instancia,
     `Skipped→Pending` a nivel tarea; la columna `executed_at_utc` (que ya guardaba la fecha de
     completado) se renombró a `completed_at` en vez de perder ese dato.

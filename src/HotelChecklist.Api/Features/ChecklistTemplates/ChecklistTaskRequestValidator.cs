@@ -10,6 +10,7 @@ public sealed class ChecklistTaskRequestValidator : AbstractValidator<ChecklistT
         RuleFor(t => t.Name).NotEmpty().MaximumLength(200);
         RuleFor(t => t.Description).MaximumLength(1000);
         RuleFor(t => t.Order).GreaterThanOrEqualTo(0);
+        RuleFor(t => t.EstimatedDurationMinutes).GreaterThan(0).When(t => t.EstimatedDurationMinutes.HasValue);
 
         RuleFor(t => t.ExecutionMode)
             .NotEmpty()

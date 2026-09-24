@@ -5,5 +5,6 @@ public sealed record ChecklistTaskResponseItem(
     string Name,
     string? Description,
     int Order,
+    int? EstimatedDurationMinutes,
     string ExecutionMode,
     List<ScheduleResponseItem> Schedules);

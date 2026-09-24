@@ -7,4 +7,11 @@ public sealed record DashboardResponse(
     int Completed,
     int Overdue,
     double? AverageDurationSeconds,
-    double CompletionRatePercent);
+    double CompletionRatePercent,
+    int TasksTotal,
+    int TasksPending,
+    int TasksInProgress,
+    int TasksCompleted,
+    int TasksReviewed,
+    int TasksOverdue,
+    double? AverageTaskDurationSeconds);
