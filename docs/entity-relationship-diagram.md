@@ -106,6 +106,14 @@ erDiagram
     CALL ||--o{ CALL_COMMENT : tiene
     CALL_COMMENT }o--|| USER : "escrito por"
 
+    AREA ||--o{ SERVICE_ORDER : "setor de"
+    ASSET ||--o{ SERVICE_ORDER : "objeto de"
+    SERVICE_ORDER }o--|| USER : "criada/convertida por"
+    SERVICE_ORDER }o--o| USER : "designada a"
+    CALL |o--o| SERVICE_ORDER : "convertido em"
+    SERVICE_ORDER ||--o{ SERVICE_ORDER_COMMENT : tiene
+    SERVICE_ORDER_COMMENT }o--|| USER : "escrito por"
+
     AREA {
         uuid id PK
         string name
@@ -121,8 +129,8 @@ erDiagram
 
     USER {
         uuid id PK
-        string name
-        string email
+        string name "único — es el campo de login, no el email"
+        string email "nullable — no todo colaborador del hotel tiene correo"
         string role "Directoria | Supervisor | Colaborador | Gerencia"
         bool active
     }
@@ -251,6 +259,35 @@ erDiagram
         string content_type "nullable"
         long file_size_bytes "nullable"
     }
+
+    SERVICE_ORDER {
+        uuid id PK
+        uuid created_by_user_id FK "quien la creó o convirtió el chamado"
+        uuid area_id FK
+        uuid asset_id FK "obligatorio — a diferencia de Call, siempre tiene un ativo"
+        uuid call_id FK "nullable, único — a lo sumo 1 OS por chamado"
+        string subject
+        string description "nullable"
+        enum priority "Baixa | Media | Alta"
+        enum status "Open | InProgress | Finished"
+        timestamptz due_at_utc "fecha de vencimiento real, no calculada"
+        uuid assigned_user_id FK "nullable"
+        timestamptz started_at "nullable"
+        timestamptz completed_at "nullable"
+        long duration_seconds "nullable"
+    }
+
+    SERVICE_ORDER_COMMENT {
+        uuid id PK
+        uuid service_order_id FK
+        string text "nullable, max 2000 caracteres — puede ser solo un archivo"
+        timestamptz created_at
+        uuid author_user_id FK
+        string file_path "nullable"
+        string file_name "nullable"
+        string content_type "nullable"
+        long file_size_bytes "nullable"
+    }
 ```
 
 ## Notas de diseño
@@ -368,6 +405,34 @@ erDiagram
     un chamado, así que `AddCallComment` no tiene ningún bloqueo de estado — cualquier usuario
     autenticado puede comentar en cualquier momento del ciclo de vida. `ListCalls`/`GetCallById`
     exponen `CommentCount`.
+- **`ServiceOrder` (ordens de serviço) nace de dos caminos, uno directo y otro por conversión de un
+  `Call`**, y comparte el mismo ciclo de 3 estados que `Call`: `Open → InProgress → Finished`.
+  - **Creación directa** (`CreateServiceOrder`, Supervisor+): `AreaId`, `AssetId` (obligatorio —
+    a diferencia de `Call`, una OS siempre tiene un ativo asociado), `Subject`, `Priority` y
+    `DueAtUtc` son todos requeridos. `CallId` queda `null`.
+  - **Conversión de un Chamado** (`POST /calls/{id}/convert-to-service-order`, Supervisor+): hereda
+    `AreaId` del chamado; `AssetId` y `DueAtUtc` se piden en la conversión (el chamado no tiene
+    ativo ni vencimiento propios); `Subject`/`Description` se heredan del chamado si no se
+    sobrescriben; **`Priority` es opcional y hereda la del chamado si se omite** (a diferencia de
+    la creación directa, donde es obligatoria). `CreatedByUserId` graba quien convirtió, no quien
+    abrió el chamado originalmente. Un **índice único** en `call_id` (nulls no cuentan como
+    duplicados en Postgres) impide convertir el mismo chamado dos veces
+    (`ServiceOrders.AlreadyConverted`); también se valida que el `Asset` elegido pertenezca a la
+    misma `Area` que el chamado.
+  - **`Overdue` nunca se persiste**: se calcula en cada respuesta (`List`/`GetById`) como
+    `DueAtUtc < UtcNow && Status != Finished` — es un valor derivado, no una columna.
+  - **Permisos más restrictivos que `Call`**: crear, convertir, asignar, iniciar y finalizar son
+    todos exclusivos de `Policies.SupervisorOrAbove` (a diferencia de `Call`, donde un colaborador
+    puede auto-asignarse e iniciar/finalizar lo suyo). **Eliminar una OS es exclusivo de
+    `Policies.ManagerOrAbove`** — el único borrado físico expuesto en todo el módulo de operaciones
+    (`Call`, `ChecklistInstance`, `ServiceOrder`); borra en cascada sus `ServiceOrderComment`.
+  - **`ServiceOrderComment` replica exactamente `CallComment`/`ChecklistTaskComment`**: mismo shape,
+    mismo `multipart/form-data`, mismos comentarios de sistema al asignar/iniciar/finalizar, mismo
+    endpoint de archivo (`GET /api/service-orders/comments/{commentId}/file`).
+- **Login por `Name`, no por `Email`**: no todo colaborador del hotel tiene correo propio, así que
+  `Email` es opcional (`nullable`) en todo el modelo de `User` — solo `Name` es obligatorio y
+  **único** (índice `ix_users_name`). `LoginHandler` busca por `u.Name == command.Name`; el
+  `Email` sigue existiendo como dato de contacto opcional, pero no participa de la autenticación.
 - **`ChecklistTemplate` versiona por copy-on-write en vez de mutar con historial**: `Update`
   separa los campos por si tocan o no `ChecklistTask`/`ChecklistTaskExecution` (FK `Restrict`):
   - **Nombre/descripción/área/duración/horarios del template**: nunca tocan `ChecklistTask`, así
