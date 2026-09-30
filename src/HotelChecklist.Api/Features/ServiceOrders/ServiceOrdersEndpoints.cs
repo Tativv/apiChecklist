@@ -8,6 +8,7 @@ using HotelChecklist.Api.Features.ServiceOrders.GetById;
 using HotelChecklist.Api.Features.ServiceOrders.List;
 using HotelChecklist.Api.Features.ServiceOrders.ServiceOrderComments;
 using HotelChecklist.Api.Features.ServiceOrders.Start;
+using HotelChecklist.Api.Features.ServiceOrders.Update;
 
 namespace HotelChecklist.Api.Features.ServiceOrders;
 
@@ -36,6 +37,9 @@ public static class ServiceOrdersEndpoints
 
         services.AddScoped<ICommandHandler<DeleteServiceOrderCommand, Unit>, DeleteServiceOrderHandler>();
 
+        services.AddScoped<ICommandHandler<UpdateServiceOrderCommand, UpdateServiceOrderResponse>, UpdateServiceOrderHandler>();
+        services.AddScoped<IValidator<UpdateServiceOrderRequest>, UpdateServiceOrderRequestValidator>();
+
         return services;
     }
 
@@ -53,5 +57,6 @@ public static class ServiceOrdersEndpoints
         group.MapAddServiceOrderComment();
         group.MapGetServiceOrderCommentFile();
         group.MapDeleteServiceOrder();
+        group.MapUpdateServiceOrder();
     }
 }

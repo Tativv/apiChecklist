@@ -8,6 +8,7 @@ using HotelChecklist.Api.Features.Calls.Finish;
 using HotelChecklist.Api.Features.Calls.GetById;
 using HotelChecklist.Api.Features.Calls.List;
 using HotelChecklist.Api.Features.Calls.Start;
+using HotelChecklist.Api.Features.Calls.Update;
 
 namespace HotelChecklist.Api.Features.Calls;
 
@@ -36,6 +37,9 @@ public static class CallsEndpoints
         services.AddScoped<ICommandHandler<ConvertCallToServiceOrderCommand, ConvertCallToServiceOrderResponse>, ConvertCallToServiceOrderHandler>();
         services.AddScoped<IValidator<ConvertCallToServiceOrderRequest>, ConvertCallToServiceOrderRequestValidator>();
 
+        services.AddScoped<ICommandHandler<UpdateCallCommand, UpdateCallResponse>, UpdateCallHandler>();
+        services.AddScoped<IValidator<UpdateCallRequest>, UpdateCallRequestValidator>();
+
         return services;
     }
 
@@ -53,5 +57,6 @@ public static class CallsEndpoints
         group.MapAddCallComment();
         group.MapGetCallCommentFile();
         group.MapConvertCallToServiceOrder();
+        group.MapUpdateCall();
     }
 }
