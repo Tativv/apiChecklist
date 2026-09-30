@@ -9,7 +9,7 @@ public sealed class User : IAuditable
 
     public string Name { get; set; } = string.Empty;
 
-    public string Email { get; set; } = string.Empty;
+    public string? Email { get; set; }
 
     public UserRole Role { get; set; }
 

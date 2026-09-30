@@ -12,10 +12,18 @@ public sealed class CreateUserHandler(AppDbContext db, IPasswordHasher passwordH
 {
     public async Task<Result<CreateUserResponse>> Handle(CreateUserCommand command, CancellationToken cancellationToken)
     {
-        var emailInUse = await db.Users.AnyAsync(u => u.Email == command.Email, cancellationToken);
+        var nameInUse = await db.Users.AnyAsync(u => u.Name == command.Name, cancellationToken);
 
-        if (emailInUse)
-            return Result.Failure<CreateUserResponse>(Error.Conflict("Users.EmailInUse", "Ya existe un usuario con ese email."));
+        if (nameInUse)
+            return Result.Failure<CreateUserResponse>(Error.Conflict("Users.NameInUse", "Ya existe un usuario con ese nombre."));
+
+        if (!string.IsNullOrWhiteSpace(command.Email))
+        {
+            var emailInUse = await db.Users.AnyAsync(u => u.Email == command.Email, cancellationToken);
+
+            if (emailInUse)
+                return Result.Failure<CreateUserResponse>(Error.Conflict("Users.EmailInUse", "Ya existe un usuario con ese email."));
+        }
 
         var areaIds = command.AreaIds.Distinct().ToList();
         var validAreaCount = await db.Areas.CountAsync(a => areaIds.Contains(a.Id), cancellationToken);
@@ -27,7 +35,7 @@ public sealed class CreateUserHandler(AppDbContext db, IPasswordHasher passwordH
         {
             Id = Guid.NewGuid(),
             Name = command.Name,
-            Email = command.Email,
+            Email = string.IsNullOrWhiteSpace(command.Email) ? null : command.Email,
             Role = Enum.Parse<UserRole>(command.Role, ignoreCase: true),
             PasswordHash = passwordHasher.Hash(command.Password),
             Active = true,

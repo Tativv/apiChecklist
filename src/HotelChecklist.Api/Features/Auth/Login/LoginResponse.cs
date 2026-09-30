@@ -5,5 +5,5 @@ public sealed record LoginResponse(
     DateTimeOffset ExpiresAtUtc,
     Guid UserId,
     string Name,
-    string Email,
+    string? Email,
     string Role);

@@ -16,10 +16,10 @@ public sealed class LoginHandler(
     public async Task<Result<LoginResponse>> Handle(LoginCommand command, CancellationToken cancellationToken)
     {
         var user = await db.Users
-            .FirstOrDefaultAsync(u => u.Email == command.Email && u.Active, cancellationToken);
+            .FirstOrDefaultAsync(u => u.Name == command.Name && u.Active, cancellationToken);
 
         if (user is null || !passwordHasher.Verify(command.Password, user.PasswordHash))
-            return Result.Failure<LoginResponse>(Error.Unauthorized("Auth.InvalidCredentials", "Email o contraseña inválidos."));
+            return Result.Failure<LoginResponse>(Error.Unauthorized("Auth.InvalidCredentials", "Nombre o contraseña inválidos."));
 
         var token = tokenGenerator.GenerateToken(user);
         var expiresAtUtc = DateTimeOffset.UtcNow.AddMinutes(jwtOptions.Value.ExpiryMinutes);

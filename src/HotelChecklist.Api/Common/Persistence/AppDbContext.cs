@@ -36,6 +36,10 @@ public sealed class AppDbContext(DbContextOptions<AppDbContext> options) : DbCon
 
     public DbSet<CallComment> CallComments => Set<CallComment>();
 
+    public DbSet<ServiceOrder> ServiceOrders => Set<ServiceOrder>();
+
+    public DbSet<ServiceOrderComment> ServiceOrderComments => Set<ServiceOrderComment>();
+
     protected override void OnModelCreating(ModelBuilder modelBuilder)
     {
         modelBuilder.ApplyConfigurationsFromAssembly(typeof(AppDbContext).Assembly);

@@ -11,6 +11,7 @@ using HotelChecklist.Api.Features.Calls;
 using HotelChecklist.Api.Features.ChecklistInstances;
 using HotelChecklist.Api.Features.ChecklistTemplates;
 using HotelChecklist.Api.Features.Reports;
+using HotelChecklist.Api.Features.ServiceOrders;
 using HotelChecklist.Api.Features.Users;
 using Microsoft.AspNetCore.Authentication.JwtBearer;
 using Microsoft.AspNetCore.Http.Json;
@@ -111,7 +112,8 @@ builder.Services
     .AddChecklistTemplatesFeature()
     .AddChecklistInstancesFeature()
     .AddReportsFeature()
-    .AddCallsFeature();
+    .AddCallsFeature()
+    .AddServiceOrdersFeature();
 
 var app = builder.Build();
 
@@ -138,6 +140,7 @@ app.MapChecklistTemplatesEndpoints();
 app.MapChecklistInstancesEndpoints();
 app.MapReportsEndpoints();
 app.MapCallsEndpoints();
+app.MapServiceOrdersEndpoints();
 
 if (app.Environment.IsDevelopment() || app.Configuration.GetValue<bool>("SeedOnStartup"))
 {

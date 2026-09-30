@@ -31,7 +31,7 @@ public class ChecklistLifecycleTests : IClassFixture<CustomWebApplicationFactory
         await _factory.InitializeAsync();
         _client = _factory.CreateClient();
 
-        var loginResponse = await _client.PostAsJsonAsync("/api/auth/login", new LoginRequest("gerencia@hotelchecklist.local", "Gerencia123!"));
+        var loginResponse = await _client.PostAsJsonAsync("/api/auth/login", new LoginRequest("Gerencia", "Gerencia123!"));
         loginResponse.StatusCode.Should().Be(HttpStatusCode.OK);
 
         var login = await loginResponse.Content.ReadFromJsonAsync<LoginResponse>();

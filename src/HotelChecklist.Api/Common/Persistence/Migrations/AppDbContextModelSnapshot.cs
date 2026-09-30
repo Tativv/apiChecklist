@@ -607,6 +607,160 @@ namespace HotelChecklist.Api.Common.Persistence.Migrations
                     b.ToTable("schedules", (string)null);
                 });
 
+            modelBuilder.Entity("HotelChecklist.Domain.Entities.ServiceOrder", b =>
+                {
+                    b.Property<Guid>("Id")
+                        .ValueGeneratedOnAdd()
+                        .HasColumnType("uuid")
+                        .HasColumnName("id");
+
+                    b.Property<Guid>("AreaId")
+                        .HasColumnType("uuid")
+                        .HasColumnName("area_id");
+
+                    b.Property<Guid>("AssetId")
+                        .HasColumnType("uuid")
+                        .HasColumnName("asset_id");
+
+                    b.Property<Guid?>("AssignedUserId")
+                        .HasColumnType("uuid")
+                        .HasColumnName("assigned_user_id");
+
+                    b.Property<Guid?>("CallId")
+                        .HasColumnType("uuid")
+                        .HasColumnName("call_id");
+
+                    b.Property<DateTimeOffset?>("CompletedAt")
+                        .HasColumnType("timestamp with time zone")
+                        .HasColumnName("completed_at");
+
+                    b.Property<DateTimeOffset>("CreatedAtUtc")
+                        .HasColumnType("timestamp with time zone")
+                        .HasColumnName("created_at_utc");
+
+                    b.Property<Guid>("CreatedByUserId")
+                        .HasColumnType("uuid")
+                        .HasColumnName("created_by_user_id");
+
+                    b.Property<string>("Description")
+                        .HasMaxLength(2000)
+                        .HasColumnType("character varying(2000)")
+                        .HasColumnName("description");
+
+                    b.Property<DateTimeOffset>("DueAtUtc")
+                        .HasColumnType("timestamp with time zone")
+                        .HasColumnName("due_at_utc");
+
+                    b.Property<long?>("DurationSeconds")
+                        .HasColumnType("bigint")
+                        .HasColumnName("duration_seconds");
+
+                    b.Property<string>("Priority")
+                        .IsRequired()
+                        .HasMaxLength(20)
+                        .HasColumnType("character varying(20)")
+                        .HasColumnName("priority");
+
+                    b.Property<DateTimeOffset?>("StartedAt")
+                        .HasColumnType("timestamp with time zone")
+                        .HasColumnName("started_at");
+
+                    b.Property<string>("Status")
+                        .IsRequired()
+                        .HasMaxLength(20)
+                        .HasColumnType("character varying(20)")
+                        .HasColumnName("status");
+
+                    b.Property<string>("Subject")
+                        .IsRequired()
+                        .HasMaxLength(200)
+                        .HasColumnType("character varying(200)")
+                        .HasColumnName("subject");
+
+                    b.Property<DateTimeOffset>("UpdatedAtUtc")
+                        .HasColumnType("timestamp with time zone")
+                        .HasColumnName("updated_at_utc");
+
+                    b.HasKey("Id")
+                        .HasName("pk_service_orders");
+
+                    b.HasIndex("AreaId")
+                        .HasDatabaseName("ix_service_orders_area_id");
+
+                    b.HasIndex("AssetId")
+                        .HasDatabaseName("ix_service_orders_asset_id");
+
+                    b.HasIndex("AssignedUserId")
+                        .HasDatabaseName("ix_service_orders_assigned_user_id");
+
+                    b.HasIndex("CallId")
+                        .IsUnique()
+                        .HasDatabaseName("ix_service_orders_call_id");
+
+                    b.HasIndex("CreatedByUserId")
+                        .HasDatabaseName("ix_service_orders_created_by_user_id");
+
+                    b.HasIndex("Status")
+                        .HasDatabaseName("ix_service_orders_status");
+
+                    b.ToTable("service_orders", (string)null);
+                });
+
+            modelBuilder.Entity("HotelChecklist.Domain.Entities.ServiceOrderComment", b =>
+                {
+                    b.Property<Guid>("Id")
+                        .ValueGeneratedOnAdd()
+                        .HasColumnType("uuid")
+                        .HasColumnName("id");
+
+                    b.Property<Guid>("AuthorUserId")
+                        .HasColumnType("uuid")
+                        .HasColumnName("author_user_id");
+
+                    b.Property<string>("ContentType")
+                        .HasMaxLength(100)
+                        .HasColumnType("character varying(100)")
+                        .HasColumnName("content_type");
+
+                    b.Property<DateTimeOffset>("CreatedAt")
+                        .HasColumnType("timestamp with time zone")
+                        .HasColumnName("created_at");
+
+                    b.Property<string>("FileName")
+                        .HasMaxLength(300)
+                        .HasColumnType("character varying(300)")
+                        .HasColumnName("file_name");
+
+                    b.Property<string>("FilePath")
+                        .HasMaxLength(500)
+                        .HasColumnType("character varying(500)")
+                        .HasColumnName("file_path");
+
+                    b.Property<long?>("FileSizeBytes")
+                        .HasColumnType("bigint")
+                        .HasColumnName("file_size_bytes");
+
+                    b.Property<Guid>("ServiceOrderId")
+                        .HasColumnType("uuid")
+                        .HasColumnName("service_order_id");
+
+                    b.Property<string>("Text")
+                        .HasMaxLength(2000)
+                        .HasColumnType("character varying(2000)")
+                        .HasColumnName("text");
+
+                    b.HasKey("Id")
+                        .HasName("pk_service_order_comments");
+
+                    b.HasIndex("AuthorUserId")
+                        .HasDatabaseName("ix_service_order_comments_author_user_id");
+
+                    b.HasIndex("ServiceOrderId")
+                        .HasDatabaseName("ix_service_order_comments_service_order_id");
+
+                    b.ToTable("service_order_comments", (string)null);
+                });
+
             modelBuilder.Entity("HotelChecklist.Domain.Entities.TaskSchedule", b =>
                 {
                     b.Property<Guid>("Id")
@@ -709,7 +863,6 @@ namespace HotelChecklist.Api.Common.Persistence.Migrations
                         .HasColumnName("created_at_utc");
 
                     b.Property<string>("Email")
-                        .IsRequired()
                         .HasMaxLength(320)
                         .HasColumnType("character varying(320)")
                         .HasColumnName("email");
@@ -741,6 +894,10 @@ namespace HotelChecklist.Api.Common.Persistence.Migrations
                     b.HasIndex("Email")
                         .IsUnique()
                         .HasDatabaseName("ix_users_email");
+
+                    b.HasIndex("Name")
+                        .IsUnique()
+                        .HasDatabaseName("ix_users_name");
 
                     b.ToTable("users", (string)null);
                 });
@@ -962,6 +1119,73 @@ namespace HotelChecklist.Api.Common.Persistence.Migrations
                     b.Navigation("Area");
                 });
 
+            modelBuilder.Entity("HotelChecklist.Domain.Entities.ServiceOrder", b =>
+                {
+                    b.HasOne("HotelChecklist.Domain.Entities.Area", "Area")
+                        .WithMany()
+                        .HasForeignKey("AreaId")
+                        .OnDelete(DeleteBehavior.Restrict)
+                        .IsRequired()
+                        .HasConstraintName("fk_service_orders_areas_area_id");
+
+                    b.HasOne("HotelChecklist.Domain.Entities.Asset", "Asset")
+                        .WithMany()
+                        .HasForeignKey("AssetId")
+                        .OnDelete(DeleteBehavior.Restrict)
+                        .IsRequired()
+                        .HasConstraintName("fk_service_orders_assets_asset_id");
+
+                    b.HasOne("HotelChecklist.Domain.Entities.User", "AssignedUser")
+                        .WithMany()
+                        .HasForeignKey("AssignedUserId")
+                        .OnDelete(DeleteBehavior.Restrict)
+                        .HasConstraintName("fk_service_orders_users_assigned_user_id");
+
+                    b.HasOne("HotelChecklist.Domain.Entities.Call", "Call")
+                        .WithMany()
+                        .HasForeignKey("CallId")
+                        .OnDelete(DeleteBehavior.Restrict)
+                        .HasConstraintName("fk_service_orders_calls_call_id");
+
+                    b.HasOne("HotelChecklist.Domain.Entities.User", "CreatedByUser")
+                        .WithMany()
+                        .HasForeignKey("CreatedByUserId")
+                        .OnDelete(DeleteBehavior.Restrict)
+                        .IsRequired()
+                        .HasConstraintName("fk_service_orders_users_created_by_user_id");
+
+                    b.Navigation("Area");
+
+                    b.Navigation("Asset");
+
+                    b.Navigation("AssignedUser");
+
+                    b.Navigation("Call");
+
+                    b.Navigation("CreatedByUser");
+                });
+
+            modelBuilder.Entity("HotelChecklist.Domain.Entities.ServiceOrderComment", b =>
+                {
+                    b.HasOne("HotelChecklist.Domain.Entities.User", "AuthorUser")
+                        .WithMany()
+                        .HasForeignKey("AuthorUserId")
+                        .OnDelete(DeleteBehavior.Restrict)
+                        .IsRequired()
+                        .HasConstraintName("fk_service_order_comments_users_author_user_id");
+
+                    b.HasOne("HotelChecklist.Domain.Entities.ServiceOrder", "ServiceOrder")
+                        .WithMany("Comments")
+                        .HasForeignKey("ServiceOrderId")
+                        .OnDelete(DeleteBehavior.Cascade)
+                        .IsRequired()
+                        .HasConstraintName("fk_service_order_comments_service_orders_service_order_id");
+
+                    b.Navigation("AuthorUser");
+
+                    b.Navigation("ServiceOrder");
+                });
+
             modelBuilder.Entity("HotelChecklist.Domain.Entities.TaskSchedule", b =>
                 {
                     b.HasOne("HotelChecklist.Domain.Entities.Schedule", "Schedule")
@@ -1089,6 +1313,11 @@ namespace HotelChecklist.Api.Common.Persistence.Migrations
                     b.Navigation("TemplateAssets");
 
                     b.Navigation("TemplateSchedules");
+                });
+
+            modelBuilder.Entity("HotelChecklist.Domain.Entities.ServiceOrder", b =>
+                {
+                    b.Navigation("Comments");
                 });
 
             modelBuilder.Entity("HotelChecklist.Domain.Entities.User", b =>

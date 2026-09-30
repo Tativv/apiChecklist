@@ -7,4 +7,8 @@ public sealed record CreateCallCommand(
     string Subject,
     string? Description,
     string Priority,
-    Guid CreatedByUserId) : ICommand<CreateCallResponse>;
+    Guid CreatedByUserId,
+    Stream? FileContent,
+    string? FileName,
+    string? FileContentType,
+    long? FileSizeBytes) : ICommand<CreateCallResponse>;

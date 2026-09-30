@@ -14,55 +14,66 @@ public static class DbSeeder
         if (await db.Users.AnyAsync(cancellationToken))
             return;
 
+        // Login é por Name (não por Email) — nem todo colaborador do hotel tem e-mail próprio.
+        // As contas de demonstração usam só o nome do perfil/função, sem e-mail.
         var directoria = new User
         {
             Id = Guid.NewGuid(),
-            Name = "Directoria Demo",
-            Email = "directoria@hotelchecklist.local",
+            Name = "Diretoria",
             Role = UserRole.Directoria,
-            PasswordHash = passwordHasher.Hash("Directoria123!"),
-            Active = true
-        };
-
-        var supervisor = new User
-        {
-            Id = Guid.NewGuid(),
-            Name = "Supervisor Demo",
-            Email = "supervisor@hotelchecklist.local",
-            Role = UserRole.Supervisor,
-            PasswordHash = passwordHasher.Hash("Supervisor123!"),
-            Active = true
-        };
-
-        var colaborador = new User
-        {
-            Id = Guid.NewGuid(),
-            Name = "Colaborador Demo",
-            Email = "colaborador@hotelchecklist.local",
-            Role = UserRole.Colaborador,
-            PasswordHash = passwordHasher.Hash("Colaborador123!"),
+            PasswordHash = passwordHasher.Hash("Diretoria123!"),
             Active = true
         };
 
         var gerencia = new User
         {
             Id = Guid.NewGuid(),
-            Name = "Gerencia Demo",
-            Email = "gerencia@hotelchecklist.local",
+            Name = "Gerencia",
             Role = UserRole.Gerencia,
             PasswordHash = passwordHasher.Hash("Gerencia123!"),
             Active = true
         };
 
-        db.Users.AddRange(directoria, supervisor, colaborador, gerencia);
+        var supervisor = new User
+        {
+            Id = Guid.NewGuid(),
+            Name = "Supervisor",
+            Role = UserRole.Supervisor,
+            PasswordHash = passwordHasher.Hash("Supervisor123!"),
+            Active = true
+        };
+
+        var recepcao = new User
+        {
+            Id = Guid.NewGuid(),
+            Name = "Recepcao",
+            Role = UserRole.Colaborador,
+            PasswordHash = passwordHasher.Hash("Recepcao123!"),
+            Active = true
+        };
+
+        var mantinemento = new User
+        {
+            Id = Guid.NewGuid(),
+            Name = "Mantinemento",
+            Role = UserRole.Colaborador,
+            PasswordHash = passwordHasher.Hash("Mantinemento123!"),
+            Active = true
+        };
+
+        db.Users.AddRange(directoria, gerencia, supervisor, recepcao, mantinemento);
 
         var areaNames = new[] { "Habitaciones", "Lobby", "Restaurante", "Piscina", "Mantenimiento" };
         var areas = areaNames.Select(name => new Area { Id = Guid.NewGuid(), Name = name }).ToList();
         db.Areas.AddRange(areas);
 
         var roomsArea = areas.First(a => a.Name == "Habitaciones");
+        var lobbyArea = areas.First(a => a.Name == "Lobby");
+        var maintenanceArea = areas.First(a => a.Name == "Mantenimiento");
 
         db.UserAreas.Add(new UserArea { Id = Guid.NewGuid(), UserId = supervisor.Id, AreaId = roomsArea.Id });
+        db.UserAreas.Add(new UserArea { Id = Guid.NewGuid(), UserId = recepcao.Id, AreaId = lobbyArea.Id });
+        db.UserAreas.Add(new UserArea { Id = Guid.NewGuid(), UserId = mantinemento.Id, AreaId = maintenanceArea.Id });
 
         var sampleAsset = new Asset
         {
